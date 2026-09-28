@@ -9,7 +9,7 @@ package ChapterStructure {
         chartered; // INCOSE Board 승인 완료, 정식 Chapter로 인가된 상태
     }
 
-    part def Chapter {
+    part def KoreaChapter {
         doc
         /* System of Interest: INCOSE Korea Chapter 그 자체.
          * 회원(Member)은 External Actor가 아닌 이 시스템의 내부
@@ -19,7 +19,7 @@ package ChapterStructure {
          * 기준 미충족 시 부여, 기준 충족 후 Board 승인으로 정식
          * "chartered" Chapter가 됨). 현재는 emerging 상태로 가정.
          */
-        attribute charterStatus : ChapterCharterStatusKind = ChapterCharterStatusKind::emerging;
+        attribute charterStatus : ChapterCharterStatusKind = ChapterCharterStatusKind::chartered; // Korea Chapter is assumed to be chartered (기존에 이미 존재하고 있었고, 가입자도 29명 정도 됨)
         part member : Stakeholders::Member [1..*];
     }
 
@@ -33,13 +33,13 @@ package ChapterStructure {
 
         item def NeedRequestItem {
             doc
-            /* 문항7·8·9 응답이 흐르는 아이템: Member → Chapter */
+            /* Member → Chapter */
             attribute needText : String;
         }
 
         item def GiveResourceItem {
             doc
-            /* 문항11·12 응답이 흐르는 아이템: Member → Chapter */
+            /* Chapter → Member */
             attribute resourceType : GiveResourceKind;
             attribute detail : String [0..1];
         }
@@ -169,5 +169,5 @@ package ChapterStructure {
         }
     } // package KnowledgeStore
 
-    part theChapter : Chapter;
+    part theChapter : KoreaChapter;
 } // package ChapterStructure

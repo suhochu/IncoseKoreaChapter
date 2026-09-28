@@ -7,7 +7,7 @@ package Concerns {
     concern def KoreanChapterConcern;
 
     concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -16,7 +16,7 @@ package Concerns {
     }
 
     concern def ValueRationaleValidationConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -28,7 +28,7 @@ package Concerns {
     }
 
     concern def BoundaryDependencyConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         stakeholder vendor : ToolVendor;
         require constraint {
@@ -40,7 +40,7 @@ package Concerns {
     }
 
     concern def OperationalFlowConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         stakeholder sector : INCOSESector;
         require constraint {
@@ -52,7 +52,7 @@ package Concerns {
     }
 
     concern def LifecycleEvolutionConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -63,7 +63,7 @@ package Concerns {
     }
 
     concern def KnowledgeAssetConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -74,7 +74,7 @@ package Concerns {
     }
 
     concern def RiskSecurityConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -86,7 +86,7 @@ package Concerns {
     }
 
     concern def CapabilityValueConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::Chapter;
+        subject theChapter : ChapterStructure::KoreaChapter;
         stakeholder member : Member;
         stakeholder peer : PeerSocietyMember;
         require constraint {

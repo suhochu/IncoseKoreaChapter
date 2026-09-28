@@ -138,7 +138,7 @@ package SystemContext {
     }
 
     // ---- Base Architecture 경계 포트가 추가된 Chapter (SoI) ----
-    part def ChapterInContext :> Chapter {
+    part def ChapterInContext :> KoreaChapter {
         doc
         /* Base Architecture 단계에서 외부 컨텍스트 포트 5종이
          * 추가된 Chapter 정의. Member는 여전히 내부 part로 유지됨
