@@ -1,22 +1,18 @@
-package Concerns {
+package StakeholdersConcerns {
     doc
-    /* Concerns — 뷰포인트별 1:1 매핑되는 관심사 정의 */
+    /* Concerns — 통합된 Stakeholders, ActorAndInterfaces, SystemContext 
+     * 구조를 기반으로 각 뷰포인트별 1:1 매핑되는 관심사 정의
+     */
 
-    private import ChapterStructure::Stakeholders::*;
+    // 앞서 통합한 Comprehensive 패키지 요소들을 import
+    private import Stakeholders::*;
+    private import ActorAndInterfaces::*;
+    private import SystemContext::*;
 
     concern def KoreanChapterConcern;
 
-    concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
-        stakeholder member : Member;
-        require constraint {
-            doc
-            /* 시스템(챕터)과 직접 상호작용하는 액터들의 속성, 도메인, 전문성 레벨 식별. */
-        }
-    }
-
     concern def ValueRationaleValidationConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -28,9 +24,10 @@ package Concerns {
     }
 
     concern def BoundaryDependencyConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
-        stakeholder vendor : ToolVendor;
+        stakeholder vendor : ContextToolVendor; // 외부 인터페이스 액터로 매핑 업데이트
+        stakeholder techOps : ContextTechnicalOperations; // 신규: SE Handbook 등 문서 리딩의 원천이 되는 의존성 추가
         require constraint {
             doc
             /* 시스템의 경계(Boundary), 외부 의존성(Dependencies), 가용
@@ -40,30 +37,30 @@ package Concerns {
     }
 
     concern def OperationalFlowConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
-        stakeholder sector : INCOSESector;
+        stakeholder sector : ContextINCOSESector; // 외부 인터페이스 액터로 매핑 업데이트
         require constraint {
             doc
             /* 시스템이 요구사항을 충족하기 위해 운영 기간 동안 어떻게
-             * 동작하고 정보를 교환하는가.
+             * 동작하고 정보를 교환하는가. (활동 보고 및 운영 흐름)
              */
         }
     }
 
     concern def LifecycleEvolutionConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
             /* 시스템(챕터)이 시간에 따라 어떻게 상태(State)가 변하고
-             * 진화하는가.
+             * 진화하는가. (Phase 1 -> Phase 2 전환 등)
              */
         }
     }
 
     concern def KnowledgeAssetConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -74,7 +71,7 @@ package Concerns {
     }
 
     concern def RiskSecurityConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
         require constraint {
             doc
@@ -86,9 +83,10 @@ package Concerns {
     }
 
     concern def CapabilityValueConcern :> KoreanChapterConcern {
-        subject theChapter : ChapterStructure::KoreaChapter;
+        subject theChapter : KoreaChapter;
         stakeholder member : Member;
-        stakeholder peer : PeerSocietyMember;
+        stakeholder peerMember : PeerSocietyMember;
+        stakeholder peerOrg : ContextPeerSocietyOrganization; // 신규: 개별 회원을 넘어선 조직 단위 타 학회(KOSSE/KCOSE) 비교 대상 편입
         require constraint {
             doc
             /* 이 시스템이 궁극적으로 한국의 시스템 엔지니어링 생태계
@@ -96,4 +94,13 @@ package Concerns {
              */
         }
     }
-} // package Concerns
+
+    concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 시스템(챕터)과 직접 상호작용하는 액터들의 속성, 도메인, 전문성 레벨 식별. */
+        }
+    }
+} // package StakeholdersConcerns
