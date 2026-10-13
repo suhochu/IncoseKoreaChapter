@@ -34,6 +34,7 @@ package SystemContext {
         attribute title : String;
         attribute category : ArtifactCategoryKind;
         attribute owner : String;
+        attribute locationURL : String;
     }
 
     part def KnowledgeRepository {
@@ -80,13 +81,17 @@ package SystemContext {
 
         // 2) 역량 인스턴스 구체화 (ChapterCapabilities 파일 내용 병합)
         part globalStandardFastAdoption : ChapterCapability redefines capabilities {
-            doc /* 예시 인스턴스 */
-            attribute :>> descriptionText = "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
+            doc
+            /* 예시 인스턴스 */
+            attribute :>> descriptionText =
+                "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
         }
 
         part handsOnToolPractice : ChapterCapability redefines capabilities {
-            doc /* 예시 인스턴스 */
-            attribute :>> descriptionText = "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
+            doc
+            /* 예시 인스턴스 */
+            attribute :>> descriptionText =
+                "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
         }
     }
 

@@ -25,7 +25,7 @@ package Chapter_Behavior {
             doc
             /* 내부 비동기/실시간 지식 교환 프로세스 (Internal Flow) */
 
-            in item mode : ExchangeModeKind;
+            in attribute mode : ExchangeModeKind;
             in item referenceResource : HandbookResourceItem [0..1]; // TechOps 등 외부 문헌 리소스 활용
 
             out item producedArtifact : ChapterArtifact; // 논의 후 생성된 지식 자산
@@ -87,7 +87,7 @@ package Chapter_Behavior {
                 doc
                 /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 단계 */
             }
-            
+
             transition phase1To2 first onlineStudyPhase then sponsorshipAndOfflineSeminarPhase {
                 doc
                 /* Phase 2 전환(Transition) 조건. 
