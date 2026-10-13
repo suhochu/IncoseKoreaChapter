@@ -1,0 +1,1962 @@
+##1_ASELCM_LV3/1_GOVERNANCE/1. Governance.sysml##
+package INCOSE_Korea_Chapter_Governance {
+    doc
+    /* ASELCM System 3 (Environment & Governance System)
+     * 대상: System 2 (INCOSE Korea Chapter 조직 및 운영 모델)
+     * 목적: 챕터 모델의 일관성, 확장성, 표준 준수성을 통제하는 거버넌스 프레임워크
+     */
+
+    // 통제 대상인 System 2(조직 모델) 및 외부 컨텍스트 임포트 (Lifecycle 제외)
+    private import SystemContext::*;
+
+    // ==========================================
+    // 1. Modeling Conventions (모델링 규약 및 형상 관리)
+    // ==========================================
+    package ModelingConventions {
+        doc
+        /* System-as-Code 접근 방식에 따른 SysML v2 모델 작성 표준 및 버전 관리 체계.
+         * Git/GitHub 기반의 브랜치 전략, 커밋 메시지 규칙, 그리고 
+         * 모델 요소별 명명 규칙(Naming Convention)을 정의하여 다수 회원의 협업 충돌을 방지.
+         */
+
+        constraint def NamingConventionRule {
+            doc
+            /* 예: 모든 part def는 PascalCase, 속성은 camelCase 준수 등 */
+        }
+
+        constraint def VersionControlPolicy {
+            doc
+            /* 예: 메인 브랜치 병합 전 총무 및 운영진의 Pull Request 승인 필수 */
+        }
+    } // package ModelingConventions
+
+    // ==========================================
+    // 2. Policy & Directives (글로벌 정책 및 외부 규정)
+    // ==========================================
+    package PolicyAndDirectives {
+        doc
+        /* INCOSE Global (Board of Directors) 및 Asia-Oceania Sector의 상위 지침.
+         * 챕터 운영 모델이 글로벌 규정(Operations Manual)과 상충하지 않도록 제약(Constraint)을 가함.
+         */
+
+        requirement def SectorComplianceRule {
+            doc
+            /* 아시아-오세아니아 섹터 정기 활동 보고 양식 및 주기 준수 규정 */
+        }
+
+        requirement def ToolLicensePolicy {
+            doc
+            /* 상용 MBSE 툴(Cameo 등) 및 SysML v2 API 사용 시 라이선스 위반 방지 규정 */
+        }
+    } // package PolicyAndDirectives
+
+    // ==========================================
+    // 3. Quality Assurance & Maturity Gates (품질 보증 및 성장 통제)
+    // ==========================================
+    package QualityAssurance {
+        doc
+        /* System 2 모델의 무결성 평가 및 조직 성장을 통제하는 프로세스.
+         * 구체적인 Lifecycle(상태머신) 구현체가 없더라도, 거버넌스 차원에서 
+         * 조직이 다음 단계로 나아가기 위한 품질/정량적 요건을 제약(Constraint)으로 관리함.
+         */
+
+        action def ModelReviewProcess {
+            doc
+            /* 정기적인 챕터 모델 리팩토링 및 논리적 오류(Validation) 검수 흐름 */
+            action submitModelUpdate;
+            action reviewByChapterLeadership;
+            action mergeAndDeploy;
+
+            first submitModelUpdate;
+            then reviewByChapterLeadership;
+            then mergeAndDeploy;
+        }
+
+        constraint def PhaseTransitionGateCondition {
+            doc
+            /* 조직 성장 조건 (Maturity Gate): 
+             * 오프라인 세미나 정례화 및 공식 워킹그룹 발족 등 
+             * 특정 수준에 도달하기 위해 요구되는 정량적/정성적 지표 달성 여부 검증.
+             */
+        }
+    } // package QualityAssurance
+
+    // ==========================================
+    // 4. Tooling Ecosystem (도구 사슬 및 IT 환경)
+    // ==========================================
+    package ToolingEcosystem {
+        doc
+        /* 챕터 모델이 배포되고 시각화되는 외부 IT 인프라 환경.
+         * SysML v2 API 연동, 시각화 도구(Tom Sawyer 등), 웹 블로그/지식 저장소 파이프라인.
+         */
+
+        part def ModelRepositoryServer {
+            doc
+            /* SysML v2 모델을 호스팅하고 REST API를 제공하는 백엔드 환경 */
+        }
+
+        part def VisualizationEngine {
+            doc
+            /* 텍스트 모델을 다이어그램으로 렌더링하는 시각화 도구 환경 */
+        }
+    } // package ToolingEcosystem
+
+    // ==========================================
+    // 5. Governance System (System 3 실체 및 통제 포트)
+    // ==========================================
+    part def GovernanceSystem {
+        doc
+        /* System 2(KoreaChapter)를 감싸고 통제하는 System 3의 최상위 컨텍스트.
+         * 챕터 운영 시스템이 거버넌스 규칙을 입력받고(in), 규정 준수 상태를 출력(out)하는 구조.
+         */
+
+        // 거버넌스를 구성하는 하위 규정 및 시스템들
+        part conventions : ModelingConventions::NamingConventionRule [1..*];
+        part directives : PolicyAndDirectives::SectorComplianceRule [1..*];
+        part qaProcess : QualityAssurance::ModelReviewProcess;
+        part toolchain : ToolingEcosystem::ModelRepositoryServer;
+
+        // System 2(KoreaChapter)를 통제하기 위한 인터페이스
+        port governanceControlPort {
+            doc
+            /* 거버넌스 정책(규칙, 라이선스, 승인 요건)을 System 2로 전달 */
+            out item policyDirectives;
+        }
+
+        port complianceMonitoringPort {
+            doc
+            /* System 2의 운영 데이터 및 활동 지표를 수집하여 상태 전환(Maturity Gate) 심사에 활용 */
+            in item chapterOperationalMetrics;
+        }
+    }
+} // package INCOSE_Korea_Chapter_Governance
+
+##2_ASELCM LV2_Chapter_System/1_View and Viewpoint/1. Viewpoint.sysml##
+package Viewpoints {
+    private import StakeholdersConcerns::*;
+
+    viewpoint 'administrative operations viewpoint' {
+        frame concern : OperationalFlowConcern;
+        require constraint {
+            doc
+            /* 1. Chapter의 효과적이고 지속적인 운영을 위한 행정적인 관점
+             * 지식 저장소 관리, 정기적인 활동 보고 프로세스, 리소스 할당 및 
+             * 향후 챕터 성장 단계에 따른 행정적 제약 및 규칙을 다룸.
+             */
+        }
+    }
+
+    viewpoint 'member value viewpoint' {
+        frame concern : ValueRationaleValidationConcern;
+        require constraint {
+            doc
+            /* 2. Chapter가 각 멤버들에게 실질적인 긍정적인 영향을 주기 위한 관점
+             * 회원들의 요구사항 충족, 실무 역량(SysML v2 등) 향상, 
+             * 개인의 제약 조건을 고려한 가치 제공 및 검증 지표를 다룸.
+             */
+        }
+    }
+
+    viewpoint 'incose alignment viewpoint' {
+        frame concern : BoundaryDependencyConcern;
+        require constraint {
+            doc
+            /* 3. INCOSE 자체와 연결을 위한 관점
+             * INCOSE Asia-Oceania Sector 보고 체계 확립, 
+             * Technical Operations의 SE Handbook 등 글로벌 표준 산출물 도입 및 
+             * 글로벌 챕터로서의 의존성 관리 및 얼라인먼트를 다룸.
+             */
+        }
+    }
+
+    viewpoint 'peer society connection viewpoint' {
+        frame concern : CapabilityValueConcern;
+        require constraint {
+            doc
+            /* 4. 기존 시스템 엔지니어링 모임(KCOSE, KOSSE 등)과의 연계 관점
+             * 국내 타 학회와의 상호 보완적 역할, 챕터 대 챕터 차원의 정보 교환, 
+             * 조직 레벨에서의 벤치마킹 및 차별화된 시스템 엔지니어링 생태계 기여 방안을 다룸.
+             */
+        }
+    }
+} // package Viewpoints
+
+##2_ASELCM LV2_Chapter_System/1_View and Viewpoint/2. Views.sysml##
+package Views {
+    private import Viewpoints::*;
+
+    view AdministrativeOperationsView {
+        doc
+        /* 행정/운영 흐름, 플랫폼(KnowledgeRepository) 스키마 및 제약 조건 노출 */
+        satisfy 'administrative operations viewpoint';
+        expose SystemContext::KnowledgeRepository;
+        expose SystemContext::OperationalConstraintCheck;
+        // expose ChapterBehavior::ConOps::*; (추후 행위 모델 구현 시 노출)
+    }
+
+    view MemberValueView {
+        doc
+        /* 회원 속성(도메인, 관심사), 제공 자원 및 회원 가치 검증 세트 노출 */
+        satisfy 'member value viewpoint';
+        expose ChapterMembers::IncoseKoreaChapterMember;
+        expose ChapterMembers::IncoseKoreaChapterMember::giveResource;
+        // expose ChapterRequirements::MemberNeeds::*; (추후 요구사항 구현 시 노출)
+    }
+
+    view IncoseAlignmentView {
+        doc
+        /* 외부 액터 중 INCOSESector, TechnicalOperations와의 인터페이스 연결 및 아이템 흐름 노출 */
+        satisfy 'incose alignment viewpoint';
+        expose ActorAndInterfaces::ContextINCOSESector;
+        expose ActorAndInterfaces::ContextTechnicalOperations;
+        expose ActorAndInterfaces::SectorActivityReportItem;
+        expose ActorAndInterfaces::HandbookResourceItem;
+    }
+
+    view PeerSocietyConnectionView {
+        doc
+        /* KOSSE, KCOSE 등 외부 학회 액터(PeerSocietyOrganization)와의 인터페이스 및 역량(Capability) 노출 */
+        satisfy 'peer society connection viewpoint';
+        expose ActorAndInterfaces::ContextPeerSocietyOrganization;
+        expose ActorAndInterfaces::PeerBenchmarkItem;
+        expose Stakeholders::PeerSociety;
+        // expose ChapterCapabilities::*; (추후 역량 모델 구현 시 노출)
+    }
+} // package Views
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/1. Objectives.sysml##
+package IncoseKoreaChapter_Objectives {
+    doc
+    /* [목표(Goal) 뷰포인트]
+     * INCOSE Korea Chapter 프로젝트가 존재하는 근본적인 이유를 정의한다.
+     * 어떤 문제(Problem Statement)를 풀기 위해 어떤 시스템 아이디어(System Idea)를 
+     * 제안하는지를 최상위 요구사항 계층으로 표현한다.
+     */
+
+    requirement def Objective {
+        doc
+        /* 프로젝트의 근본적인 문제 정의(Problem Statement), 
+         * 시스템 아이디어(System Idea), 
+         * 그리고 비즈니스 목표를 모델링하는 최상위 요구사항 타입
+         */
+    }
+
+    // ==========================================
+    // 1. Objective (목적)
+    // ==========================================
+    requirement def ChapterObjective :> Objective {
+        doc
+        /* 1. INCOSE Korea Chapter는 단순한 이론적 스터디(싱크탱크)를 넘어, 실질적인 산출물을 직접 도출하는 'Do-Tank' 방식으로 조직을 재활성화하여 시스템 엔지니어링(SE)의 현장 적용을 극대화하는 것을 목적으로 한다.
+         * 2. 산업계 실무자들이 현업에 즉시 적용하고 활용할 수 있는 구체적이고 실용적인 도메인별(자동차, 우주 등) 시스템 엔지니어링 레퍼런스 모델(창조 모델)을 공동으로 개발한다.
+         * 3. (선택적 목표) SysML v2에 관심이 있는 회원들의 경우, SysML v2의 Formal Language 특성을 활용해 요구사항 설계부터 시뮬링크(Simulink) 등을 통한 오토코드 제너레이션까지 이어지는 End-to-End 추적성을 구현하고, 이를 통해 SE의 실효성을 리더십과 경영진에게 시각적으로 입증하는 것을 세부 목표로 삼는다.
+         */
+    }
+
+    // ==========================================
+    // 2. Problem Statement (문제 정의)
+    // ==========================================
+    requirement def ChapterProblemStatement :> Objective {
+        doc
+        /* 1. 전 세계적으로 시스템 엔지니어링의 중요성과 관련 인구가 증가하는 추세와 달리, 국내 SE 전문 인력은 지속적으로 감소하는 구조적인 역행을 겪고 있다.
+         * 2. 국내 인력 감소와 SE 적용 실패의 근본적인 원인은 교육을 이수하더라도 "실무에서 직접적인 효과를 체감하지 못한다"는 점과, 업무에 적용하려 해도 참고할 만한 '구체적이고 실용적인 레퍼런스'가 철저히 부재하다는 데 있다.
+         * 3. 실제 자동차 전장 및 에어 서스펜션 등 현업에서는 다수의 국제 표준(ISO 26262, ASPICE, 사이버시큐리티 등) 준수를 위해 SE 방법론이 강제되나, 아키텍처 및 요구사항 문서가 최종 제품의 품질 향상과 연결되지 못하고 '보여주기식 요식 행위'로 전락하여 프로젝트마다 기술적 부채가 누적되는 악순환이 반복되고 있다.
+         */
+    }
+
+    // ================================================
+    // 3. System Idea / Elevator Pitch (시스템 아이디어)
+    // ================================================
+    requirement def ChapterSystemIdea :> ChapterProblemStatement {
+        doc
+        /* 1. "현장의 문제를 직접 해결하는 시스템 엔지니어링 실전 랩(Lab), INCOSE Korea 'Do-Tank' 챕터".
+         * 2. 자동차 도메인의 SDV(Software Defined Vehicle) 전체 관점과 우주 도메인의 미션 시스템 전체를 대상으로 삼아, 운영자 요구사항(Operational Stakeholder Requirement)부터 소프트웨어 코드 자동 생성까지 완벽하게 이어지는 SysML v2 기반의 엔드투엔드(End-to-End) 레퍼런스 모델을 직접 구축한다.
+         * 3. 완성된 이 '모범 사례(Best Practice)'를 통해 리더십과 경영진을 설득하고, 성공 사례를 직접 경험한 실무진들이 주변으로 지식을 전파하는 상향식(Bottom-up) 확산을 통해 대한민국이 시스템 엔지니어링 분야의 패스트 무버(Fast Mover)로 도약하는 핵심 엔진 역할을 수행한다.
+         */
+    }
+} // package IncoseKoreaChapter_Objectives
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/2. Stakeholders.sysml##
+package Stakeholders {
+    private import ScalarValues::*;
+
+    doc
+    /* SoI 내부 구성요소로서의 회원 및 기타 이해관계자 정의 */
+
+    enum def GiveResourceKind {
+        knowledgeSharing; // 지식/경험 공유
+        operationsSupport; // 운영/행정 지원
+        toolExpertise; // 툴/실습 역량
+        networking; // 네트워크/섭외
+    }
+
+    enum def PeerSocietyKind {
+        kosse;
+        kcose;
+        other;
+    }
+
+    // ---- 내부 이해관계자 간 교환 아이템 및 포트 ----
+    item def NeedRequestItem {
+        doc
+        /* Member → Chapter */
+        attribute needText : String;
+    }
+
+    item def GiveResourceItem {
+        doc
+        /* Chapter → Member */
+        attribute resourceType : GiveResourceKind;
+        attribute detail : String [0..1];
+    }
+
+    port def NeedPort { out item needRequestOut : NeedRequestItem; }
+    port def GivePort { out item giveResourceOut : GiveResourceItem; }
+
+    // ---- 이해관계자 (내부 구성요소) ----
+    part def Member {
+        // [설문1] 기본 인적 사항 및 소속
+
+        // ---- Enum 정의: 주요 산업 도메인 ----
+        enum def DomainKind {
+            defenseAndAerospace; // 방위산업 / 항공우주
+            automotiveAndMobility; // 모빌리티 / 자동차 / 자율주행
+            railInfrastructureAndEnergy; // 철도 / 인프라 / 플랜트
+            biomedicalAndHealthcare; // 의료기기 / 헬스케어
+            itAndSoftware; // IT / 소프트웨어 시스템
+            academiaAndResearch; // 학계 / 연구소
+            other; // 기타
+        }
+
+        // ---- Enum 정의: 거주 및 주요 활동 지역 ----
+        enum def RegionKind {
+            seoul; // 서울
+            gyeonggiIncheon; // 경기 / 인천
+            daejeonSejongChungcheong; // 대전 / 세종 / 충청
+            daeguGyeongbuk; // 대구 / 경북
+            busanUlsanGyeongnam; // 부산 / 울산 / 경남
+            gwangjuJeolla; // 광주 / 전라
+            gangwon; // 강원
+            jeju; // 제주
+            other; // 기타
+        }
+
+        attribute name : String;
+        attribute email : String [0..*];
+        attribute affiliation : String [0..1];
+        attribute position : String [0..1];
+        attribute phoneNumber : String [0..1];
+        attribute region : RegionKind [0..*];
+        attribute domain : DomainKind [0..*];
+        attribute domainOther : String [0..1];
+        attribute preferredActivity : String [0..*];
+        attribute expectation : String [0..1];
+    }
+
+    part def PeerSociety {
+        doc
+        /* 국내 타 학회. KOSSE/KCOSE 등. */
+        attribute peerSocietyKind : PeerSocietyKind;
+    }
+
+    part def PeerSocietyMember :> Member {
+        doc
+        /* KOSSE/KCOSE 등 국내 타 학회 회원. 역량 뷰포인트 비교 대상. */
+        attribute affiliatedSociety : String;
+    }
+} // package Stakeholders
+
+package ChapterMembers {
+    private import Stakeholders::*;
+    private import ScalarValues::*;
+
+    // ---- Enum 정의: 설문 2 요구사항 관련 ----
+    enum def GiveResourceKind {
+        knowledgeSharing; // 지식/경험 공유
+        operationsSupport; // 운영/행정 지원
+        toolExpertise; // 툴/실습 역량
+        networking; // 네트워크/섭외
+        other;
+    }
+
+    enum def OnlineExchangeKind {
+        seminar; // 세미나/특강형
+        caseStudy; // 케이스 스터디형
+        projectLab; // 프로젝트 실습형
+        literatureReading; // 문헌 리딩형
+        other;
+    }
+
+    enum def ITPlatformKind {
+        notion; // Notion
+        slackDiscord; // Slack / Discord
+        googleWorkspace; // Google Workspace
+        other;
+    }
+
+    enum def SecurityRuleKind {
+        anonymizeData; // 가상값 치환
+        noCompanyProjectNames; // 회사명/프로젝트명 비언급
+        internalOnly; // 챕터 내부 공유 한정
+        noRecording; // 녹화/캡처 금지
+        none; // 특별히 필요 없음
+        other;
+    }
+
+    // ---- Member Part Def (설문 1 + 설문 2 GtWR 특성 기반 업데이트) ----
+    part def IncoseKoreaChapterMember :> Member {
+        // [설문2] GtWR C2 - Appropriate (적절성)
+        attribute interestKeyword : String [0..3];
+
+        // [설문2] GtWR C1, C3, C5, C9 - What (기능적 요구사항)
+        attribute coreValueWhat : String [0..*];
+
+        // [설문2] GtWR C8 - Correct (요구사항 근거/Rationale)
+        attribute rationale : String [0..*];
+
+        // [설문2] GtWR C7 - Verifiable (검증가능성/Validation)
+        attribute validationCriterion : String [0..*];
+
+        // [설문2] 우선순위 (Priority)
+        attribute priority : String [0..*];
+
+        // [설문2] GtWR C6 - Feasible (실현가능성/가용 자원)
+        attribute giveResource : GiveResourceKind [0..*];
+        attribute giveDetail : String [0..1];
+
+        // [설문2] GtWR C4 - Complete (완전성/운영 제약조건)
+        attribute operationalConstraint : String [0..*];
+
+        // [설문2] 생태계 통합 및 운영 개념
+        attribute externalDependency : String [0..1]; // Interfaces
+        attribute preferredOnlineExchange : OnlineExchangeKind [0..*]; // ConOps
+        attribute preferredITPlatform : ITPlatformKind [0..*]; // IT 인프라
+        attribute lifecycleTransitionCondition : String [0..1]; // Lifecycle
+        attribute securityRule : SecurityRuleKind [0..*]; // Risk & Security
+        attribute securityRuleOther : String [0..1];
+
+        // [설문2] GtWR C1 - Necessary (고유 가치/Capability)
+        attribute uniqueCapability : String [0..1];
+    }
+
+    // ---- 개별 회원 모델링 (Part Usages) ----
+
+    part '이수' : IncoseKoreaChapterMember {
+        :>> name = "이수";
+        :>> email = "isugkgkgk@gmail.com";
+        :>> affiliation = "인터그래비티(주)";
+        :>> position = "비행SW팀 연구원";
+        :>> phoneNumber = "010-2650-9183";
+        :>> region = RegionKind::daejeonSejongChungcheong;
+        :>> domain = DomainKind::defenseAndAerospace;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "INCOSE 리소스(SE Handbook, SE 역량 등) 기반 전문성 개발 및 SEP 자격증 스터디",
+            "주니어 SE 및 학생을 위한 교육, 멘토링, 네트워킹 프로그램",
+        );
+        :>> expectation =
+            "기존 국내 학회에 참여하지 않아, INCOSE Korea Chapter에서 SE 학술 활동이 어떤 형태로 진행되는지 알아가고싶습니다.";
+
+        :>> interestKeyword = ("MBSE 실무 적용", "디지털 엔지니어링",);
+        :>> coreValueWhat =
+            "나는 SysML V2를 처음 실무에 적용해볼 때, 챕터 활동을 통해 SysML V2의 모델링을 기반으로 한 시뮬레이션 레퍼런스를 얻을 수 있어야 한다.";
+        :>> rationale =
+            "현 시점에서 SysML V1 대비 툴 성숙도가 낮은 SysML V2를 어떻게 활용할 수 있는지에 대한 레퍼런스가 부족하여 SysML V2의 사내 운용의 합리성이 부족한 상황이기 때문입니다.";
+        :>> validationCriterion =
+            "SysML V2 기반의 MILS, SILS, 가능하다면 HILS의 시뮬레이션 레퍼런스 확보";
+        :>> giveResource = (
+            GiveResourceKind::knowledgeSharing, GiveResourceKind::operationsSupport,
+        );
+        :>> giveDetail = "Capella/ARCADIA 기반 MBSE 운용 경험 공유 가능";
+        :>> operationalConstraint =
+            "보안 규정상 사내 실제 업무 데이터는 외부 공유 불가. 대전 근무 및 거주로 인해 현장 미팅 참여가 제한적임";
+        :>> externalDependency =
+            "프로젝트의 기획 범위가 CATIA Magic Community Edition의 가용 범위에 있거나, 프로젝트 참가자 전원이 Magic 툴 라이선스를 보유할 필요가 있음.";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::caseStudy,
+            OnlineExchangeKind::projectLab, OnlineExchangeKind::literatureReading,
+        );
+        :>> preferredITPlatform = (
+            ITPlatformKind::notion, ITPlatformKind::slackDiscord, ITPlatformKind::googleWorkspace,
+        );
+        :>> lifecycleTransitionCondition =
+            "발표 자료 10건, 자체 프로젝트 3건 이상 등 MBSE의 실효성을 직접적으로 보여줄 수 있는 레퍼런스를 확보한 경우";
+        :>> securityRule = (
+            SecurityRuleKind::anonymizeData, SecurityRuleKind::noCompanyProjectNames,
+            SecurityRuleKind::internalOnly,
+        );
+        :>> uniqueCapability = "다른 INCOSE 챕터와의 국제적 협력";
+    }
+
+    part '박승훈' : IncoseKoreaChapterMember {
+        :>> name = "박승훈";
+        :>> email = "abhyung123@gmail.com";
+        :>> affiliation = "영풍전자";
+        :>> position = "무인항전체계개발팀 책임연구원";
+        :>> phoneNumber = "010-4007-8059";
+        :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
+        :>> domain = DomainKind::defenseAndAerospace;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+        );
+        :>> expectation =
+            "기존 활동 내역을 잘 모릅니다. 실무에 적용할 수 있는 구체 내용들을 다루었으면 합니다";
+
+        :>> interestKeyword = (
+            "MBSE 실무 적용", "SE 적용 실제 사례분석", "주요 문서 양식 및 예시문서 학습",
+        );
+        :>> coreValueWhat = (
+            "1. 무인기 시스템 개발 시 챕터 활동을 통하여 MBSE 실무 지식을 습득하고 이를 모델링툴에 적용할 수 있어야 한다.",
+            "2. SW 요구도 및 SE관련 문서를 적절히 산출하고 구조를 파악하며 요구도를 작성할 수 있어야 한다.",
+        );
+        :>> rationale =
+            "무인기 시스템에 체계적인 SE 및 체계종합 적용에 있어 적절한 관리도구가 없기 때문입니다. 또한 LRU SW/HW 관련 요구도 및 개발과정을 관리함에 있어 해당 지식이 필요하기 때문입니다.";
+        :>> validationCriterion =
+            "1년 뒤 목적한 시스템 개발이 완료되었다는 가정하에 SE 모델링 툴로 완성된 파일을 생성하고 V모델을 따라 단계별로 구성이 되어있는지 확인(분석, 시연)";
+        :>> giveResource = GiveResourceKind::other;
+        :>> giveDetail =
+            "능력이 되는데로 활동이 가능하나 우선 어떤 부분이 필요한지 탐색이 필요할 것 같습니다. 운영 방안등의 초기 논의가 필요해 보입니다.";
+        :>> operationalConstraint = "특별 제약사항 없음";
+        :>> externalDependency =
+            "SE관련 소프트웨어를 쓴다면 해당 라이센스 보유여부 확인 필요, 오픈소스인 카펠라가 있는데 사용여부 확인이 필요할 것 같습니다.";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::projectLab,
+        );
+        :>> preferredITPlatform = (
+            ITPlatformKind::notion, ITPlatformKind::slackDiscord, ITPlatformKind::googleWorkspace,
+        );
+        :>> securityRule = (
+            SecurityRuleKind::anonymizeData, SecurityRuleKind::noCompanyProjectNames,
+        );
+        :>> uniqueCapability = "incose와 연계한 글로벌 현업트랜드 제공";
+    }
+
+    part '이중윤' : IncoseKoreaChapterMember {
+        :>> name = "이중윤";
+        :>> email = "leejy@ajou.ac.kr, lee.joongyoon@gmail.com";
+        :>> affiliation = "아주대학교";
+        :>> position = "시스템공학과 교수";
+        :>> phoneNumber = "010-8951-5222";
+        :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
+        :>> domain = (
+            DomainKind::defenseAndAerospace, DomainKind::automotiveAndMobility,
+            DomainKind::railInfrastructureAndEnergy, DomainKind::itAndSoftware,
+            DomainKind::academiaAndResearch,
+        );
+        :>> preferredActivity = (
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+            "주니어 SE 및 학생을 위한 교육, 멘토링, 네트워킹 프로그램",
+            "국내 SE 연구 및 산업 적용 사례를 국제 사회에 발표/공유",
+        );
+        :>> expectation =
+            "기존 학회(KOSSE)에는 국제협력분과가 있습니다. 추수호 총무님께서 국제협력분과 임원으로 역임하시고, 이 활동을 이끌어 가시면 좋겠습니다. INCOSE Korea Chapter는 독립 조직으로 활동하면서, 활동 내역을 학회와 공유하는 방식으로 협력하고 그 외의 협력 방법도 찾아 가면 좋겠습니다.";
+
+        :>> interestKeyword =
+            "MBSE 사례 기반 교육을 위해 도메인별로 모범 사례로 활용할 수 있는 참조모델 만들기";
+        :>> coreValueWhat = (
+            "R.1 MBSE 사례 개발", "R.2 아키텍트 양성", "R.3 아키텍트 능력 수준 달성",
+        );
+        :>> rationale =
+            "국가 전반의 산업이... (중략) ...개념설계 역량이 필요하다. 따라서 개념설계 기술의 핵심인 MBSE 기술 및 도메인 참조모델을 개발하고 활용하는 기술을 겸비한 아키텍트 양성이 필요하다.";
+        :>> validationCriterion = (
+            "1) 스스로 개발한 개념설계 참조모델 갯수",
+            "2) 스스로 개발한 개념설계 참조모델이 미래에 적합한 수준에 대한 주관적 평가",
+            "3) 참조모델을 재활용한 다른 사람이 그 유용성에 대한 주관적 평가",
+        );
+        :>> priority = "1순위:R.1 MBSE 사례 개발, 2순위: R.2 아키텍트 양성";
+        :>> giveResource = (
+            GiveResourceKind::knowledgeSharing, GiveResourceKind::toolExpertise,
+            GiveResourceKind::networking,
+        );
+        :>> giveDetail = "MBSE 참조모델 개발 교육";
+        :>> operationalConstraint =
+            "모두 바쁜게 문제인데, 온라인으로 만나고, 오프라인 모임은 가끔씩 진행";
+        :>> externalDependency = "무료 MBSE 도구 지원";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::caseStudy, OnlineExchangeKind::projectLab,
+        );
+        :>> preferredITPlatform = ITPlatformKind::googleWorkspace;
+        :>> lifecycleTransitionCondition =
+            "1. 세미나 자료가 누적되면, INCOSE 저널에 논문 게제 2. 교육자료로 활용할 수 있는 참조 모델이 3건 이상 개발되면... 3. CSEP 10명 이상이 되면, Korea Chapter에서 별도로 아키텍트 인증 프로그램 개발";
+        :>> securityRule = (
+            SecurityRuleKind::anonymizeData, SecurityRuleKind::noCompanyProjectNames,
+            SecurityRuleKind::other,
+        );
+        :>> securityRuleOther =
+            "녹화/캡처 결과물을 AI를 활용하여 보안 처리한 후 보안 처리된 데이터를 외부 공개 (매 건별로 제공자가 결정)";
+        :>> uniqueCapability =
+            "챕터 구성원이 학회 및 협회 활동에 참가 (학술대회 발표 및 임원진으로 참여 등)";
+    }
+
+    part '서은석' : IncoseKoreaChapterMember {
+        :>> name = "서은석";
+        :>> email = "essuh@snu.ac.kr";
+        :>> affiliation = "서울대학교";
+        :>> position = "교수";
+        :>> phoneNumber = "010-2688-7175";
+        :>> region = RegionKind::seoul;
+        :>> domain = (DomainKind::automotiveAndMobility, DomainKind::academiaAndResearch,);
+        :>> preferredActivity = (
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+            "주니어 SE 및 학생을 위한 교육, 멘토링, 네트워킹 프로그램",
+            "국내 SE 연구 및 산업 적용 사례를 국제 사회에 발표/공유",
+        );
+        :>> expectation = "추후 모임에서 같이 논의 요망";
+
+        :>> interestKeyword = "SE 관련 산학협력";
+        :>> coreValueWhat = "SE를 한국 산업계에 널리 전파할 수 있는 조직이 되어야 한다.";
+        :>> rationale =
+            "학교 재직자 입장에서 보았을 때 한국 기업들은 아직 Fast Follower에 머물러 있고 진정한 First Mover로 도약하기 위해서는 SE 적용이 필수라 생각됨";
+        :>> validationCriterion = "기업들의 SE Practice 적용";
+        :>> giveResource = (GiveResourceKind::knowledgeSharing, GiveResourceKind::other,);
+        :>> giveDetail = "본인의 교육 경험 공유 (SE 관련 교육 산학 기반)";
+        :>> operationalConstraint = "추후 논의";
+        :>> externalDependency = "추후 논의";
+        :>> preferredOnlineExchange = OnlineExchangeKind::seminar;
+        :>> preferredITPlatform = ITPlatformKind::googleWorkspace;
+        :>> lifecycleTransitionCondition = "추후 논의";
+        :>> securityRule = SecurityRuleKind::anonymizeData;
+        :>> uniqueCapability = "추후 논의";
+    }
+
+    part '추수호' : IncoseKoreaChapterMember {
+        :>> name = "추수호";
+        :>> email = "chooshow@gmail.com";
+        :>> affiliation = "현대모비스";
+        :>> position = "책임연구원 / 시스템 엔지니어";
+        :>> phoneNumber = "010-8379-0578";
+        :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
+        :>> domain = DomainKind::automotiveAndMobility;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 교류",
+            "INCOSE 워킹그룹(WG) 및 해외 챕터와의 국제 협력 활동",
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+        );
+        :>> expectation =
+            "다양한 비즈니스 영역 (자동차, 항공&우주, 방산, IoT)에서의 시스템 엔지니어링의 효율적인 적용 방안 공유";
+
+        :>> interestKeyword = (
+            "MBSE 실무 적용", "SysML v2", "안전 및 보안 표준 적용 시스템 아키텍처",
+        );
+        :>> coreValueWhat =
+            "나는 SysML v2를 적용해 자동차 임베디드 시스템 아키텍처를 디자인 할 때, 챕터 활동을 통해 함께 고민할 수 있는 동료와 좋은 레퍼런스를 배워 갈 수 있어야 한다.";
+        :>> rationale =
+            "실제로 제품의 품질/안전/보안과 이어지는 시스템 아키텍처를 만들 수 있는 기회가 없었다... MBSE를 도입해야 문서화를 위한 요식행위가 줄어들고... 시스템 아키텍처를 만들 수 있다고 생각하게 되었다.";
+        :>> validationCriterion =
+            "SysML v2 + MBSE 방법론 + ISO26262 + ISO/SAE21434를 전부 적용한 시스템 아키텍처 모델의 레퍼런스 완성. Github Reposiory를 Incose 아시아 챕터에 보고.";
+        :>> priority = "1순위. SysML v2 를 이용한 모델링 / 2순위. MBSE 스터디";
+        :>> giveResource = (GiveResourceKind::operationsSupport, GiveResourceKind::toolExpertise,);
+        :>> giveDetail = "1. 총무로서 챕터 운영/행정지원. 2. SysML v2 실습 리드";
+        :>> operationalConstraint = "육아를 하고 있어서, 야간 시간에는 항상 시간을 내기가 어려움";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::caseStudy,
+            OnlineExchangeKind::projectLab,
+        );
+        :>> preferredITPlatform = ITPlatformKind::googleWorkspace;
+        :>> lifecycleTransitionCondition =
+            "기업 및 학회에서 참고할 만한 레퍼런스 자료가 10건 이상 누적되면.";
+        :>> securityRule = (
+            SecurityRuleKind::anonymizeData, SecurityRuleKind::noCompanyProjectNames,
+        );
+        :>> uniqueCapability = "자동차/IoT 등 다양한 분야의 전문가 참여, Incose와 직접 교류";
+    }
+
+    part '구정모' : IncoseKoreaChapterMember {
+        :>> name = "구정모";
+        :>> email = "jeongmokoo@gmail.com";
+        :>> affiliation = "볼보그룹코리아(주)";
+        :>> position = "Group Technology&Operations Principal Solution Architect";
+        :>> phoneNumber = "010-6304-3930";
+        :>> region = (
+            RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::busanUlsanGyeongnam,
+        );
+        :>> domain = (DomainKind::automotiveAndMobility, DomainKind::itAndSoftware,);
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "해외 SE 전문가 초청 국제 세미나 및 워크숍",
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+        );
+        :>> expectation =
+            "기존 학회 및 협회에도 참석 하고 있지만 정보 공유가 잘 안되는 것 같습니다. 주제별로 공유 또는 공동 협업하는 활동이 있으면 좋을 것 같습니다.";
+
+        :>> interestKeyword = "제품 개발 단계에서 SysML 적용 하기";
+        :>> coreValueWhat = "MBSE Ontology 와 meta model 관련 레퍼런스";
+        :>> rationale = "현 제품 개발 프로세스에 적용 하기 위하여";
+        :>> validationCriterion = "Pilot 프로젝트 적용 후 적용 성공도";
+        :>> giveResource = GiveResourceKind::toolExpertise;
+        :>> giveDetail =
+            "현재 사용 중인 툴 (PTC Modeler, EA)을 이용하여 협업에서 SysML로 시스템 모델링 리딩 중";
+        :>> operationalConstraint =
+            "근무지가 창원이기 때문에 주중 서울 출장이 어렵습니다. 대면은 가능하면 금요일, 주중에는 화상회의가 좋을 것 같습니다. 화상회의는 사전 시간 조율이 필요합니다. 글로벌 미팅이 대부분 오후 4시~7시 사이에 많이 있어서.";
+        :>> externalDependency =
+            "표준 프레임워크를 정의 후 진행 하는 것이 좋을 것 같습니다. 둘은 큰 문제가 안될 것 같습니다.";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::literatureReading, OnlineExchangeKind::other,
+        );
+        :>> preferredITPlatform = (ITPlatformKind::notion, ITPlatformKind::googleWorkspace,);
+        :>> lifecycleTransitionCondition =
+            "INCOSE 자격 보유 인원 확보 후 실무에서 적용 가능한 표준안 마련 필요";
+        :>> securityRule = SecurityRuleKind::noRecording;
+        :>> uniqueCapability = "표준 가이드 기준으로 실무 적용 가능 레퍼런스 제공";
+    }
+
+    part '김희재' : IncoseKoreaChapterMember {
+        :>> name = "김희재";
+        :>> email = "tim0huj@gmail.com";
+        :>> affiliation = "에드워드코리아";
+        :>> position = "시스템개발부 (NPI-IS Sr. Systems Engineer)";
+        :>> phoneNumber = "010-9863-7900";
+        :>> region = (
+            RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::daejeonSejongChungcheong,
+        );
+        :>> domain = DomainKind::other;
+        :>> domainOther = "Manufacturing Semiconductor Equipment";
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "INCOSE 워킹그룹(WG) 및 해외 챕터와의 국제 협력 활동",
+        );
+        :>> expectation = "성공사례도 중요하지만 실패에서 개선한 사례등을 배우고자 합니다";
+
+        :>> interestKeyword = ("MBSE 활용성", "요구사항 및 V&V 추적성 관리", "Regression 관리",);
+        :>> coreValueWhat =
+            "현재 사용중인 SysMLv2를 기반으로 한 EA를 쓰고 있지만 업무적으로는 별도의 문서를 쓰고있는 실정으로 이를 실무에서 유용하게 그리고 라이브 문서로써 역할을 할 수 있는 방안 도출필요";
+        :>> rationale =
+            "MBSE에는 많은 요구사항과 설계지표가 들어가지면 현재는 가시적이지 않은 S/W의 아키텍쳐를 그리는 현실이며 이마저도 업데이트를 쫓아가지 못하는 실정";
+        :>> validationCriterion = (
+            "1. MBSE의 S/W와 소통하여 함께 Release될 수 있는 연동",
+            "2. MBSE를 활용한 기존 제품의 Modular 단위의 설계 데이터 반영",
+        );
+        :>> priority = "1. 실제 적용 사례, 2. 툴 실습 기회";
+        :>> giveResource = GiveResourceKind::knowledgeSharing;
+        :>> giveDetail = "(승인 필요) 실패담 - 현재에서 활용중인 MBSE와 그 실태";
+        :>> operationalConstraint = "보안 규정상 사내 실제 업무 데이터는 외부 공유 승인 필요";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::caseStudy,
+            OnlineExchangeKind::projectLab,
+        );
+        :>> preferredITPlatform = (ITPlatformKind::notion, ITPlatformKind::googleWorkspace,);
+        :>> lifecycleTransitionCondition =
+            "실제 적용 사례 및 개선 활동에 대한 이력 - 이는 MBSE 도입을 고려중인 기업 및 담당자가 참고 할 수 있는 좋은 사례 및 도입하였으나 여러 이유로 실패한 담당자에게 도움이 될 것으로 예상";
+        :>> securityRule = SecurityRuleKind::other;
+        :>> securityRuleOther = "발표자의 역량과 승인 한도에 맞춰 결정";
+        :>> uniqueCapability = "타 학회 경험 없음";
+    }
+
+    part '김다운' : IncoseKoreaChapterMember {
+        :>> name = "김다운";
+        :>> email = "dawun.kim93@gmail.com";
+        :>> affiliation = "한국항공우주산업";
+        :>> position = "디지털엔지니어링팀 선임연구원";
+        :>> phoneNumber = "010-4745-6797";
+        :>> region = RegionKind::busanUlsanGyeongnam;
+        :>> domain = DomainKind::defenseAndAerospace;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "해외 SE 전문가 초청 국제 세미나 및 워크숍",
+            "INCOSE 워킹그룹(WG) 및 해외 챕터와의 국제 협력 활동",
+        );
+        :>> expectation =
+            "KCOSE 활동을 해보지는 않았지만, 국내 MBSE 확산을 위한 사례연구 및 정책적인 방향도 같이 논의해보면 좋을 것 같습니다.";
+
+        :>> interestKeyword = (
+            "RA 모델 개발", "Methodology (ex, RFLP 등)", "항공기 Agile 개발 방법",
+        );
+        :>> coreValueWhat =
+            "나는 [항공기 개발에 있어 MBSE 적용 실효성을 입증할] 때, 챕터 활동을 통해 [국내외 사례 등 레퍼런스를 얻고 개발 방법론을 확립할 수 있는 인사이트]를 얻을 수 있어야 한다.";
+        :>> rationale =
+            "해외 업체 발표자료만으로는 MBSE 툴을 사용해 어떤 Methodology를 어떤 방식으로 사용했고... 실무에 적용하고자 할 때 기존 항공기 등 복합제품시스템 개발 프로세스를 어떻게 대체할 수 있는지 구체적으로 논의해보고 싶습니다.";
+        :>> validationCriterion = (
+            "1. 향후 차세대 복합제품 개발 프로그램에 MBSE를 도입해 개발 전 주기를 MBSE 툴로써 관리하는 사례",
+            "2. K-MOSA 연구에도 기여",
+        );
+        :>> priority = "1. 표준(레퍼런스) 모델 개발 / 2. MBSE 파일럿 프로젝트 수행";
+        :>> giveResource = (
+            GiveResourceKind::knowledgeSharing, GiveResourceKind::operationsSupport,
+        );
+        :>> giveDetail = "해외 아티클 번역 가능, 컨퍼런스 참석 후 지식 공유는 가능할 것 같습니다.";
+        :>> operationalConstraint = "방산 업계 보안 규정에 따라 업무 관련 데이터는 공유 불가";
+        :>> externalDependency =
+            "사용하는 Tool에 대한 전원 라이센스 보유가 필요하고, 공동 개발 시 Cloud Server(ex, TWC 등)도 필요할 것 같습니다.";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::caseStudy,
+            OnlineExchangeKind::projectLab, OnlineExchangeKind::literatureReading,
+        );
+        :>> preferredITPlatform = (ITPlatformKind::slackDiscord, ITPlatformKind::googleWorkspace,);
+        :>> securityRule = (
+            SecurityRuleKind::anonymizeData, SecurityRuleKind::noCompanyProjectNames,
+        );
+        :>> uniqueCapability = "MBSE 측면을 강화해 국내 도입 시 도움을 주면 좋겠습니다.";
+    }
+
+    part '박홍석' : IncoseKoreaChapterMember {
+        :>> name = "박홍석";
+        :>> email = "hongseok@selab.ai";
+        :>> affiliation = "시스템엔지니어링(주)";
+        :>> position = "연구개발팀 연구원";
+        :>> phoneNumber = "010-8944-3072";
+        :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
+        :>> domain = DomainKind::academiaAndResearch;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "해외 SE 전문가 초청 국제 세미나 및 워크숍",
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+        );
+
+        :>> interestKeyword = ("SysML v2", "ISO 15288", "아키텍처 설계",);
+        :>> coreValueWhat =
+            "나는 [실무에서 전체 아키텍처를 설계]할 때, 챕터 활동을 통해, [시니어 설계자의 관점과 계층 분리 사례를 접할 기회]를 얻을 수 있어야 한다.";
+        :>> rationale =
+            "기획자부터, 개발자, 의사결정자 등 다양한 사람과 소통해야 하는데, 각 자리에 따라 적절한 관점 전환과 적절한 추상화 계층에서 논의하는 노련함의 강력함과 필요성을 실감하기 때문입니다.";
+        :>> validationCriterion =
+            "300명 이상 고객 확보. 실무에서 개발 중인 MBSE 도구가 실제 국제 무대에서 인정받고 안정적 운영이 이루어진다면 좋겠습니다.";
+        :>> priority = "1. 시니어와의 세미나";
+        :>> giveResource = GiveResourceKind::toolExpertise;
+        :>> giveDetail = "자사에서 개발 중인 SysML v2 기반 MBSE 도구를 기반으로 한 실습 제공 가능";
+        :>> operationalConstraint =
+            "개발 중인 모델링 도구의 내부 테스트 단계라서, 실습을 통하여 개선 소요 수집 및 문제 신고를 받을 수 있음";
+        :>> preferredOnlineExchange = (
+            OnlineExchangeKind::seminar, OnlineExchangeKind::projectLab,
+            OnlineExchangeKind::literatureReading,
+        );
+        :>> preferredITPlatform = ITPlatformKind::googleWorkspace;
+        :>> securityRule = SecurityRuleKind::none;
+    }
+
+    // ---- 설문 2 응답 없는 회원 (설문 1 정보만 유지) ----
+    part '심정환' : IncoseKoreaChapterMember {
+        :>> name = "심정환";
+        :>> email = "jshim@lotustech.co.kr, jshim10@gmail.com";
+        :>> affiliation = "로터스정보기술";
+        :>> position = "대표이사";
+        :>> phoneNumber = "010-3270-3997";
+        :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
+        :>> domain = DomainKind::itAndSoftware;
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "INCOSE 리소스(SE Handbook, SE 역량 등) 기반 전문성 개발 및 SEP 자격증 스터디",
+            "국내 SE 전문가 간의 네트워킹 및 전문적 교류",
+        );
+        :>> expectation = "INCOSE 공인 국제 인증자격 관련 소모임 또는 스터디그룹";
+    }
+
+    part '최성열' : IncoseKoreaChapterMember {
+        :>> name = "최성열";
+        :>> email = "bm0611@gmail.com";
+        :>> affiliation = "현대모비스";
+        :>> position = "책임연구원 / 시스템 엔지니어";
+        :>> phoneNumber = "010-6302-3888";
+    }
+
+    part '최지원' : IncoseKoreaChapterMember {
+        :>> name = "최지원";
+        :>> email = "ein1013@selab.ai";
+        :>> affiliation = "아주대학교";
+        :>> position = "공학연구소 연구원";
+        :>> phoneNumber = "010-8217-0205";
+        :>> region = RegionKind::seoul;
+        :>> domain = (DomainKind::itAndSoftware, DomainKind::academiaAndResearch,);
+        :>> preferredActivity = (
+            "MBSE, SysML, UAF, Digital Engineering 등 신흥 SE 기술 지식 교류",
+            "해외 SE 전문가 초청 국제 세미나 및 워크숍",
+            "INCOSE 리소스(SE Handbook, SE 역량 등) 기반 전문성 개발 및 SEP 자격증 스터디",
+        );
+        :>> expectation = "국내 학회 참여 경험이 없어 잘 모릅니다. 많이 배우고 싶습니다.";
+    }
+} // package ChapterMembers
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/3. Actors And Interface.sysml##
+    package ActorAndInterfaces {
+        doc /* 외부 환경(Context)의 액터 정의 및 교환 인터페이스 */
+        private import ScalarValues::*;
+
+        // ---- 2.1 교환 아이템 (External Items) ----
+        item def ToolLicenseInfoItem {
+            doc /* Cameo 툴 라이선스 보유 전제 */
+            attribute toolName : String;
+            attribute licenseStatus : String;
+        }
+
+        item def SectorActivityReportItem {
+            doc /* INCOSE Asia-Oceania Sector로의 활동 보고 (활동 결과 반영) */
+            attribute periodLabel : String;
+            attribute summary : String;
+        }
+
+        item def HandbookResourceItem {
+            doc /* Technical Operations 산하 Working Group 표준 산출물 (SE Handbook 등) */
+            attribute publicationTitle : String;
+            attribute version : String;
+        }
+
+        item def SponsorshipItem {
+            doc /* CAS(Chapter Affiliation Sponsor)가 제공하는 후원 자원 */
+            attribute sponsorName : String;
+            attribute supportType : String;
+        }
+
+        item def PeerBenchmarkItem {
+            doc /* 타 학회 대비 차별점 비교를 위한 조직 레벨 정보 교환 */
+            attribute topic : String;
+            attribute note : String;
+        }
+
+        // ---- 2.2 외부 시스템 측 대응 포트 ----
+        port def VendorChapterInterfacePort { out item toolLicenseInfoOut : ToolLicenseInfoItem; }
+        port def SectorChapterInterfacePort { in item activityReportIn : SectorActivityReportItem; }
+        port def TechOpsChapterInterfacePort { out item handbookResourceOut : HandbookResourceItem; }
+        port def SponsorChapterInterfacePort { out item sponsorshipOut : SponsorshipItem; }
+        port def PeerChapterInterfacePort {
+            in item peerBenchmarkIn : PeerBenchmarkItem;
+            out item peerBenchmarkOut : PeerBenchmarkItem;
+        }
+
+        // ---- 2.3 Chapter 측 경계 포트 ----
+        port def ChapterToolInterfacePort { in item toolLicenseInfoIn : ToolLicenseInfoItem; }
+        port def ChapterSectorInterfacePort { out item activityReportOut : SectorActivityReportItem; }
+        port def ChapterTechOpsInterfacePort { in item handbookResourceIn : HandbookResourceItem; }
+        port def ChapterSponsorInterfacePort { in item sponsorshipIn : SponsorshipItem; }
+        port def ChapterPeerInterfacePort {
+            out item peerBenchmarkOut : PeerBenchmarkItem;
+            in item peerBenchmarkIn : PeerBenchmarkItem;
+        }
+
+        // ---- 2.4 경계 외부 액터 (Context Actors) ----
+        part def ContextToolVendor {
+            doc /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). 기존 ToolVendor 속성 통합. */
+            attribute toolName : String;
+            attribute licenseRequired : Boolean;
+            port vendorInterface : VendorChapterInterfacePort;
+        }
+
+        part def ContextINCOSESector {
+            doc /* INCOSE Asia-Oceania Sector (Sector III). 운용 뷰포인트 보고 대상. */
+            port sectorInterfaceOut : SectorChapterInterfacePort;
+        }
+
+        part def ContextTechnicalOperations {
+            doc /* 50개 이상의 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
+            port techOpsInterfaceOut : TechOpsChapterInterfacePort;
+        }
+
+        part def ContextChapterAffiliationSponsor {
+            doc /* 계약 기반 후원 조직(CAS). Phase 1에서는 미고려(조건부). */
+            port sponsorInterfaceOut : SponsorChapterInterfacePort;
+        }
+
+        part def ContextPeerSocietyOrganization {
+            doc /* KOSSE/KCOSE 등 조직 대 조직 인터페이스. Phase 1 비활성. */
+            port peerOrgInterfaceOut : PeerChapterInterfacePort;
+        }
+    }
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/4. Stakeholers Concerns.sysml##
+package StakeholdersConcerns {
+    doc
+    /* Concerns — 통합된 Stakeholders, ActorAndInterfaces, SystemContext 
+     * 구조를 기반으로 각 뷰포인트별 1:1 매핑되는 관심사 정의
+     */
+
+    // 앞서 통합한 Comprehensive 패키지 요소들을 import
+    private import Stakeholders::*;
+    private import ActorAndInterfaces::*;
+    private import SystemContext::*;
+
+    concern def KoreanChapterConcern;
+
+    concern def ValueRationaleValidationConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 시스템이 이해관계자에게 제공해야 할 핵심 가치(What), 도출
+             * 근거(Why), 타당성 확인 기준(Validation), 상충 시 조정
+             * 근거(Priority).
+             */
+        }
+    }
+
+    concern def BoundaryDependencyConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        stakeholder vendor : ContextToolVendor; // 외부 인터페이스 액터로 매핑 업데이트
+        stakeholder techOps : ContextTechnicalOperations; // 신규: SE Handbook 등 문서 리딩의 원천이 되는 의존성 추가
+        require constraint {
+            doc
+            /* 시스템의 경계(Boundary), 외부 의존성(Dependencies), 가용
+             * 리소스 및 물리적/보안적 한계.
+             */
+        }
+    }
+
+    concern def OperationalFlowConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        stakeholder sector : ContextINCOSESector; // 외부 인터페이스 액터로 매핑 업데이트
+        require constraint {
+            doc
+            /* 시스템이 요구사항을 충족하기 위해 운영 기간 동안 어떻게
+             * 동작하고 정보를 교환하는가. (활동 보고 및 운영 흐름)
+             */
+        }
+    }
+
+    concern def LifecycleEvolutionConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 시스템(챕터)이 시간에 따라 어떻게 상태(State)가 변하고
+             * 진화하는가. (Phase 1 -> Phase 2 전환 등)
+             */
+        }
+    }
+
+    concern def KnowledgeAssetConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 챕터 내에서 생성되는 지식(데이터, 모델, 문서)은 어떤 구조를
+             * 가지며, 어디에 저장되고 어떻게 추적되는가.
+             */
+        }
+    }
+
+    concern def RiskSecurityConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 회원들이 소속 기업의 지적 재산(IP)이나 민감한 기술 정보를
+             * 침해하지 않으면서도 지식을 교류할 수 있는 안전한 환경
+             * (Boundary)은 어떻게 구축하는가.
+             */
+        }
+    }
+
+    concern def CapabilityValueConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        stakeholder peerMember : PeerSocietyMember;
+        stakeholder peerOrg : ContextPeerSocietyOrganization; // 신규: 개별 회원을 넘어선 조직 단위 타 학회(KOSSE/KCOSE) 비교 대상 편입
+        require constraint {
+            doc
+            /* 이 시스템이 궁극적으로 한국의 시스템 엔지니어링 생태계
+             * (상위 시스템)에 어떤 고유한 역량(Capability)을 제공하는가.
+             */
+        }
+    }
+
+    concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
+        subject theChapter : KoreaChapter;
+        stakeholder member : Member;
+        require constraint {
+            doc
+            /* 시스템(챕터)과 직접 상호작용하는 액터들의 속성, 도메인, 전문성 레벨 식별. */
+        }
+    }
+} // package StakeholdersConcerns
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/5. System Context.sysml##
+package SystemContext {
+    private import Stakeholders::*;
+    private import ActorAndInterfaces::*;
+    private import ScalarValues::*;
+
+    // ---- 3.1 조직 제약사항 (Constraints) ----
+    constraint def OperationalConstraintCheck {
+        doc
+        /* "개인 제약" 응답 취합용. C10(세트의 완전성) 근거자료. */
+        attribute constraintText : String;
+    }
+
+    constraint def ExternalDependencyCheck {
+        doc
+        /* "외부 의존성/전제조건" 응답 취합용. */
+        attribute dependencyText : String;
+    }
+
+    // ---- 3.2 지식 저장소 (Knowledge Repository) ----
+    enum def PlatformKind {
+        notion;
+        slackOrDiscord;
+        googleWorkspace;
+        other;
+    }
+    enum def ArtifactCategoryKind {
+        translatedArticle;
+        sysmlDiagram;
+        meetingMinutes;
+        requirementRecord;
+    }
+
+    item def ChapterArtifact {
+        attribute title : String;
+        attribute category : ArtifactCategoryKind;
+        attribute owner : String;
+    }
+
+    part def KnowledgeRepository {
+        doc
+        /* Single Source of Truth. 플랫폼 확정 후 구체화 예정. */
+        attribute platform : PlatformKind;
+        part artifact : ChapterArtifact [0..*];
+    }
+
+    // ---- 3.3 Chapter Capability (챕터 고유 역량) ----
+    part def ChapterCapability {
+        doc
+        /* KOSSE/KCOSE 등 동위 시스템(Peer System) 대비 챕터 고유 역량 */
+        attribute descriptionText : String;
+    }
+
+    // ---- 3.4 System of Interest 정의 ----
+    enum def ChapterCharterStatusKind {
+        emerging; // INCOSE Board 최소 요건 미충족
+        chartered; // 인가된 상태
+    }
+
+    part def KoreaChapter {
+        doc
+        /* SoI: INCOSE Korea Chapter. 
+         * 내부에 회원(Member), 지식저장소(KnowledgeRepository) 뿐만 아니라
+         * 타 학회와 차별화되는 고유 역량(capabilities)을 내재화하여 포함함.
+         */
+        attribute charterStatus : ChapterCharterStatusKind = ChapterCharterStatusKind::chartered;
+
+        part member : Member [1..*];
+        part repository : KnowledgeRepository;
+        part capabilities : ChapterCapability [0..*];
+    }
+
+    part def ChapterInContext :> KoreaChapter {
+        doc
+        /* Base Architecture 단계에서 외부 컨텍스트 포트 5종이 추가된 Chapter */
+        port toolInterface : ChapterToolInterfacePort;
+        port sectorInterface : ChapterSectorInterfacePort;
+        port techOpsInterface : ChapterTechOpsInterfacePort;
+        port sponsorInterface : ChapterSponsorInterfacePort [0..1];
+        port peerInterface : ChapterPeerInterfacePort [0..1];
+
+        // 2) 역량 인스턴스 구체화 (ChapterCapabilities 파일 내용 병합)
+        part globalStandardFastAdoption : ChapterCapability redefines capabilities {
+            doc /* 예시 인스턴스 */
+            attribute :>> descriptionText = "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
+        }
+
+        part handsOnToolPractice : ChapterCapability redefines capabilities {
+            doc /* 예시 인스턴스 */
+            attribute :>> descriptionText = "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
+        }
+    }
+
+    // ---- 3.4 통합 System Context Baseline ----
+    part incoseKoreaChapterContext {
+        doc
+        /* 10월 킥오프 baseline 기준 System Context 인스턴스.
+         * 3개는 활성 연결(Phase 1), 2개는 인스턴스 미생성 보류 상태(Phase 2).
+         */
+        part chapter : ChapterInContext;
+
+        part cameoVendor : ContextToolVendor;
+        part incoseSector : ContextINCOSESector;
+        part technicalOperations : ContextTechnicalOperations;
+        part sponsor : ContextChapterAffiliationSponsor [0..1];
+        part peerSociety : ContextPeerSocietyOrganization [0..1];
+
+        // Phase 1 (활성 연결)
+        connect chapter.toolInterface to cameoVendor.vendorInterface;
+        connect chapter.sectorInterface to incoseSector.sectorInterfaceOut;
+        connect chapter.techOpsInterface to technicalOperations.techOpsInterfaceOut;
+
+        // Phase 2 (보류 - [0..1] 인스턴스화 이후 연결)
+        // connect chapter.sponsorInterface to sponsor.sponsorInterfaceOut;
+        // connect chapter.peerInterface to peerSociety.peerOrgInterfaceOut;
+    }
+} // package SystemContext
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/6. Stakeholder Need.sysml##
+package Stakeholders_Needs {
+    doc
+    /* Chapter Requirements — 통합된 SystemContext 및 Stakeholders 모델을 
+     * 기반으로 한 회원 요구사항(Member Needs) 및 보안 규칙(Security Rules) 정의
+     */
+
+    private import ScalarValues::*;
+    private import Stakeholders::*;
+    private import SystemContext::*;
+
+    // ==========================================
+    // 1. Member Needs (회원 요구사항)
+    // ==========================================
+    package ChapterMembers_Needs {
+        private import ChapterMembers::*;
+
+        doc
+        /* 회원들의 핵심 니즈와 가치 도출 근거를 담은 요구사항 세트 */
+
+        requirement def MemberNeedRequirement :> IncoseKoreaChapter_Objectives::ChapterSystemIdea {
+            doc
+            /* 구글 폼 문항7 "얻고 싶은 것 하나" 작성 템플릿을 옮기는 요구사항 정의.
+             * GtWR(Guide to Writing Requirements) C1,C3,C5,C9 확인 대상.
+             */
+            subject chapter;
+            actor member : Member; // 앞서 정의한 내부 이해관계자
+
+            attribute coreValueWhat : String [0..*]; // [추가] 문항7: 구체적인 요구사항 핵심 가치 (What)
+            attribute rationale : String [0..*]; // 문항8: 도출 근거 (Why, C8)
+            attribute validationCriterion : String [0..*]; // 문항9: 타당성 확인 기준 (Validation, C7)
+            attribute priority : String [0..*]; // 문항10: 우선순위 (세트 조율용)
+        }
+
+        // --- 개별 회원 요구사항 Usage ---
+
+        requirement lee_su_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'이수';
+            attribute :>> coreValueWhat = ChapterMembers::'이수'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'이수'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'이수'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'이수'.priority;
+        }
+
+        requirement park_sh_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'박승훈';
+            attribute :>> coreValueWhat = ChapterMembers::'박승훈'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'박승훈'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'박승훈'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'박승훈'.priority;
+        }
+
+        requirement lee_jy_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'이중윤';
+            attribute :>> coreValueWhat = ChapterMembers::'이중윤'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'이중윤'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'이중윤'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'이중윤'.priority;
+        }
+
+        requirement suh_es_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'서은석';
+            attribute :>> coreValueWhat = ChapterMembers::'서은석'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'서은석'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'서은석'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'서은석'.priority;
+        }
+
+        requirement chu_sh_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'추수호';
+            attribute :>> coreValueWhat = ChapterMembers::'추수호'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'추수호'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'추수호'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'추수호'.priority;
+        }
+
+        requirement ku_jm_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'구정모';
+            attribute :>> coreValueWhat = ChapterMembers::'구정모'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'구정모'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'구정모'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'구정모'.priority;
+        }
+
+        requirement kim_hj_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'김희재';
+            attribute :>> coreValueWhat = ChapterMembers::'김희재'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'김희재'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'김희재'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'김희재'.priority;
+        }
+
+        requirement kim_dw_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'김다운';
+            attribute :>> coreValueWhat = ChapterMembers::'김다운'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'김다운'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'김다운'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'김다운'.priority;
+        }
+
+        requirement park_hs_need : MemberNeedRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'박홍석';
+            attribute :>> coreValueWhat = ChapterMembers::'박홍석'.coreValueWhat;
+            attribute :>> rationale = ChapterMembers::'박홍석'.rationale;
+            attribute :>> validationCriterion = ChapterMembers::'박홍석'.validationCriterion;
+            attribute :>> priority = ChapterMembers::'박홍석'.priority;
+        }
+    } // package ChapterMembers_Needs
+
+    // ==========================================
+    // 2. Security Rules (보안 및 리스크 규칙)
+    // ==========================================
+    package SecurityRules {
+        doc
+        /* 리스크/보안 뷰포인트의 모델 규칙(Rule)으로 직접 채택되는 제약사항 세트 */
+
+        requirement def KnowledgeSharingSecurityRequirement {
+            private import ChapterMembers::*;
+            doc
+            /* 문항18 체크박스 응답 — 지식공유 시 준수할 최소 규칙.
+             * 소속 기업의 지적 재산(IP)이나 민감 정보를 보호하기 위한 안전 장치.
+             */
+            subject chapter;
+            actor member : IncoseKoreaChapterMember;
+
+            attribute securityRule : SecurityRuleKind [0..*];
+            attribute securityRuleOther : String [0..1];
+
+            // --- 개별 회원 보안 규칙 Usage ---
+
+            requirement lee_su_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'이수';
+                attribute :>> securityRule = ChapterMembers::'이수'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'이수'.securityRuleOther;
+            }
+
+            requirement park_sh_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'박승훈';
+                attribute :>> securityRule = ChapterMembers::'박승훈'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'박승훈'.securityRuleOther;
+            }
+
+            requirement lee_jy_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'이중윤';
+                attribute :>> securityRule = ChapterMembers::'이중윤'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'이중윤'.securityRuleOther;
+            }
+
+            requirement suh_es_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'서은석';
+                attribute :>> securityRule = ChapterMembers::'서은석'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'서은석'.securityRuleOther;
+            }
+
+            requirement chu_sh_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'추수호';
+                attribute :>> securityRule = ChapterMembers::'추수호'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'추수호'.securityRuleOther;
+            }
+
+            requirement ku_jm_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'구정모';
+                attribute :>> securityRule = ChapterMembers::'구정모'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'구정모'.securityRuleOther;
+            }
+
+            requirement kim_hj_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'김희재';
+                attribute :>> securityRule = ChapterMembers::'김희재'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'김희재'.securityRuleOther;
+            }
+
+            requirement kim_dw_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'김다운';
+                attribute :>> securityRule = ChapterMembers::'김다운'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'김다운'.securityRuleOther;
+            }
+
+            requirement park_hs_security : KnowledgeSharingSecurityRequirement {
+                subject chapter = incoseKoreaChapterContext.chapter;
+                actor member = ChapterMembers::'박홍석';
+                attribute :>> securityRule = ChapterMembers::'박홍석'.securityRule;
+                attribute :>> securityRuleOther = ChapterMembers::'박홍석'.securityRuleOther;
+            }
+        }
+    } // package SecurityRules
+} // package Stakeholders_Needs
+
+##2_ASELCM LV2_Chapter_System/2_Operational Viewpoint/7. Chapter Behavior.sysml##
+package Chapter_Behavior {
+    doc
+    /* Chapter Behavior — 통합된 시스템 경계 및 인터페이스 모델을 바탕으로
+     * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
+     */
+
+    private import SystemContext::*;
+    private import ActorAndInterfaces::*;
+
+    // ==========================================
+    // 1. ConOps (운용 시나리오 및 프로세스)
+    // ==========================================
+    package ConOps {
+        doc
+        /* 온라인 지식교환 방식 및 상위 시스템 보고 프로세스의 동적 행위 */
+
+        enum def ExchangeModeKind {
+            seminarStyle; // 세미나/특강형
+            caseStudyStyle; // 케이스 스터디형
+            handsOnLabStyle; // 프로젝트 실습형
+            literatureReadingStyle; // 문헌 리딩형
+        }
+
+        action def KnowledgeExchangeSession {
+            doc
+            /* 내부 비동기/실시간 지식 교환 프로세스 (Internal Flow) */
+
+            in item mode : ExchangeModeKind;
+            in item referenceResource : HandbookResourceItem [0..1]; // TechOps 등 외부 문헌 리소스 활용
+
+            out item producedArtifact : ChapterArtifact; // 논의 후 생성된 지식 자산
+
+            action present;
+            action discuss;
+            action archiveToKnowledgeStore {
+                doc
+                /* 생성된 산출물(producedArtifact)을 KnowledgeRepository 단일 진실 공급원에 저장 */
+            }
+
+            // 제어 흐름 (Control Flow)
+            first present;
+            then discuss;
+            then archiveToKnowledgeStore;
+        }
+
+        action def SectorReporting {
+            doc
+            /* 상위 시스템(INCOSE Asia-Oceania Sector)으로의 활동 결과 보고 프로세스 (External Flow).
+             * 챕터 총무 및 운영진이 내부 지식 저장소의 산출물들을 취합하여 공식 리포트 형태로 변환 및 전송함.
+             */
+
+            in item internalData : ChapterArtifact [1..*]; // 지식 저장소에 누적된 내부 산출물
+            out item activityReport : SectorActivityReportItem; // Sector 전송용 포맷
+
+            action compileReport;
+            action sendToSector;
+
+            first compileReport;
+            then sendToSector;
+        }
+    } // package ConOps
+
+    // ==========================================
+    // 2. Lifecycle (수명주기 상태머신)
+    // ==========================================
+    package Lifecycle {
+        doc
+        /* 챕터 성장 단계별 상태머신. Phase 2 진입 시 실측 데이터를 기반으로 
+         * 정식 Guard 조건식을 수립할 수 있도록 구조화함.
+         */
+
+        state def ChapterLifecycle {
+            entry;
+            then onlineStudyPhase;
+
+            state onlineStudyPhase {
+                doc
+                /* Phase 1: 온라인 스터디 위주 (현재) - 활성 Context 3종만 연결된 상태 */
+            }
+
+            state sponsorshipAndOfflineSeminarPhase {
+                doc
+                /* Phase 2: 기업 스폰서 확보 및 오프라인 세미나 정례화 - Sponsor, PeerSociety 연결 활성화 단계 */
+            }
+
+            state officialWorkingGroupPhase {
+                doc
+                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 단계 */
+            }
+            
+            transition phase1To2 first onlineStudyPhase then sponsorshipAndOfflineSeminarPhase {
+                doc
+                /* Phase 2 전환(Transition) 조건. 
+                 * 예시: 발표자료 10건 이상 누적 또는 고정 참석 인원 15명 초과.
+                 * 추후 실측 데이터가 모이면 정식 Guard Constraint로 승격 예정.
+                 */
+            }
+
+            transition phase2To3
+                first sponsorshipAndOfflineSeminarPhase then officialWorkingGroupPhase {
+                doc
+                /* Phase 3 전환(Transition) 조건.
+                 * 예시: 정기 오프라인 세미나 4회 이상 개최 및 기업 스폰서 1곳 이상 확보.
+                 */
+            }
+        }
+    } // package Lifecycle
+} // package Chapter_Behavior
+
+##3_Meeting/KickOff_20261009.sysml##
+package KickOff_Meeting_20261009 {
+    doc
+    /* INCOSE Korea Chapter 킥오프 미팅 (2026-10-09) 결정사항 반영 모델 */
+
+    private import ScalarValues::*;
+    private import Time::*;
+
+    // -----------------------------------------------------------
+    // [Organization] 챕터 운영 조직 체계 및 R&R
+    // -----------------------------------------------------------
+    part def ChapterRole {
+        attribute roleName : String;
+        attribute assignee : String; // 미팅 후 확정된 담당자 이름을 업데이트하는 속성
+    }
+
+    part def ChapterOrganization {
+        part chapterLeader : ChapterRole {
+            :>> roleName = "Chapter Representative";
+            :>> assignee = "이종윤 교수";
+            doc
+            /* 챕터 전체 비전 제시 및 운영 총괄 */
+        }
+        part secretary : ChapterRole {
+            :>> roleName = "Secretary (총무 및 운영 담당)";
+            :>> assignee = "추수호 책임";
+            doc
+            /* 모임 일정 조율, 카카오톡/구글 워크스페이스 인프라 세팅 및 회의록 공유 */
+        }
+        part wgLead_Auto : ChapterRole {
+            :>> roleName = "Working Group Lead (Automotive)";
+            :>> assignee = "TBD";
+            doc
+            /* 자동차 도메인 워킹그룹 리딩 */
+        }
+        part wgLead_Space : ChapterRole {
+            :>> roleName = "Working Group Lead (Space)";
+            :>> assignee = "이수 연구원";
+            doc
+            /* 우주 도메인 워킹그룹 리딩 */
+        }
+    }
+
+    enum def CommunicationChannel {
+        KakaoTalk;
+        GoogleWorkspace;
+        GitHub;
+        Slack;
+        Discord;
+        IncosePlatform;
+    }
+
+    enum def MeetingFrequency {
+        BiWeekly;
+        Quarterly;
+    }
+
+    // -----------------------------------------------------------
+    // 킥오프 미팅 본 회의 모델링 (아젠다 템플릿 및 회의록 결합)
+    // -----------------------------------------------------------
+    action def KickOffMeeting {
+        doc
+        /* [사용법] 
+         * 회의 진행 중 또는 종료 후, 각 attribute의 `=` 우측에 
+         * 합의된 결과값이나 Enum 값을 입력하여 회의록(Minutes)으로 형상관리합니다.
+         */
+
+        item meetingInfo {
+            doc
+            /* 미팅일자, 장소, 참석자 정보 기록 */
+            attribute targetTimeStructure : Iso8601DateTimeStructure {
+                :>> year = 2026;
+                :>> month = 10;
+                :>> day = 9;
+                :>> hour = 18;
+                :>> minute = 0;
+                :>> second = 0;
+                :>> hourOffset = 9; // KST 시차 (UTC+9)
+                :>> minuteOffset = 0;
+            }
+
+            attribute meetingLocation : String := "사당역 주변, 셀스스토리  8인 회의실, 우담정";
+            attribute attendees : String :=
+                "이종윤 교수, 서은석 교수, 추수호 책임, 최성열 책임, 이수 연구원, 박홍석 연구원";
+            attribute coreValue : String =
+                "싱크탱크(Think-Tank)가 아닌 실제 산출물을 만드는 도탱크(Do-Tank) 지향";
+        }
+
+        item agenda1_ReferenceModelGoal {
+            doc
+            /* 실용적 레퍼런스 모델 개발 방향성 합의 */
+            attribute approach : String =
+                "이론적 스터디를 넘어 현장 적용 가능한 실용적 레퍼런스 및 아티팩트 제작";
+            attribute targetScope_Auto : String =
+                "자동차 도메인: 부품 단위가 아닌 SDV 및 섀시를 포함한 비히클(Vehicle) 전체 수준";
+            attribute targetScope_Space : String =
+                "우주 도메인: 단일 소프트웨어가 아닌 궤도 수송 임무 시스템(Mission System) 전체";
+            attribute modelingStandard : String =
+                "Operational Stakeholder Requirement 기준 하향식 설계 및 SysML v2 기반 End-to-End 추적성(Simulink 오토코드 제너레이션까지) 연계";
+        }
+        item agenda2_SecurityAndData {
+            doc
+            /* 기업 내부 보안 가이드라인 */
+            attribute securityGuideline : String =
+                "기업 내부 민감 데이터 문서화 금지, AI 및 인터넷 공개 데이터를 기반으로 모델링 수행";
+        }
+
+        item agenda3_CommunicationChannels {
+            doc
+            /* 소통 채널 합의 결과 */
+            attribute officialChannel : CommunicationChannel = CommunicationChannel::KakaoTalk;
+            attribute repository : CommunicationChannel = CommunicationChannel::GoogleWorkspace;
+            attribute wgInternalComms : String =
+                "워킹그룹 내부 소통은 합의에 따라 Slack 또는 Discord 도입 검토";
+        }
+
+        item agenda4_MeetingSchedule {
+            doc
+            /* 모임 일정 및 리듬 합의 결과 */
+            attribute webMeeting : MeetingFrequency = MeetingFrequency::BiWeekly; // 2주 간격 웹 미팅
+            attribute offlineMeeting : MeetingFrequency = MeetingFrequency::Quarterly; // 분기 1회 오프라인 산출물 점검
+        }
+
+        // -----------------------------------------------------------
+        // [Action Items] 회의 결과 파생된 후속 조치
+        // -----------------------------------------------------------
+        action nextSteps {
+            action setupCommunicationChannel {
+                attribute assignee : String = "추수호 책임";
+                attribute task : String =
+                    "카카오톡 단체방 개설 및 미참석 3명등 동의 후 초대, 구글 워크스페이스 리포지토리 세팅";
+            }
+
+            action defineTargetSystem {
+                attribute assignee : String = "전체 참여자";
+                attribute task : String =
+                    "2주 내(10월 23일경) 각자가 모델링할 대상 시스템 선정 및 다음 웹 미팅 발표 준비";
+            }
+
+            action organizeWorkingGroups {
+                attribute assignee : String = "전체 참여자";
+                attribute task : String =
+                    "자동차 도메인과 우주 도메인 중심의 워킹그룹 구성 및 활동 범위 정의";
+            }
+        }
+    }
+} // package KickOff_Meeting_20261009
+
+##SysideViews.sysml##
+// Copyright (c) 2026 Sensmetry, UAB. All Rights Reserved.
+// Version 0.10.1
+library package <SV> SysideViews {
+    enum def <CT> ColumnType {
+        enum declaredShortName {
+            doc
+            /* The short name of the element as declared in the model.
+             *
+             * **Editing**
+             *
+             * This is an explicit element, but **does not** currently support editing through the UI.
+             */
+        }
+        enum declaredName {
+            doc
+            /* The name of the element as declared in the model.
+             *
+             * **Editing**
+             *
+             * This is an explicit element, but **does not** currently support editing through the UI.
+             */
+        }
+        enum reqId {
+            doc
+            /* Alias for the declaredShortName.
+             *
+             * **Editing**
+             *
+             * This is an explicit element, but **does not** currently support editing through the UI.
+             */
+        }
+        enum shortName {
+            doc
+            /* The short name of the element after the semantic resolution.
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum name {
+            doc
+            /* The name of the element after the semantic resolution.
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum qualifiedName {
+            doc
+            /* The qualified name of the element.
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum owner {
+            doc
+            /* The owner of the element.
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum attributeValue {
+            doc
+            /* The value of the attribute that is a feature of the requirement.
+             *
+             * **Fields**
+             *
+             * `attributeName` is a required field that must be set to the name of the attribute.
+             *
+             * **Editing**
+             *
+             * This is an explicit element -> **supports** editing through the UI.
+             *
+             * While SysML v2 supports having unnamed attributes, for the table view a non-empty `attributeName`
+             * is required as attribute is a feature that can be inherited.
+             */
+            attribute attributeName default null;
+        }
+        enum namedFeatureValue {
+            doc
+            /* The value of the feature that is a feature of the requirement.
+             *
+             * **Fields**
+             *
+             * `featureName` is a required field that must be set to the name of the feature.
+             *
+             * **Editing**
+             *
+             * While this is an explicit element, it **does not** currently support editing
+             * through the UI for clarity reasons (because '=' is overloaded for both assignment
+             * and binding in SysML, depending on the feature type).
+             *
+             * Similar to `attributeValue`, the table view requires non-empty `featureName` due to inheritence
+             */
+            attribute featureName default null;
+        }
+        enum documentation {
+            doc
+            /* The documentation of the element. It takes ALL the documentations of this element
+             * and concatenates them together.
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum specificDocumentation {
+            doc
+            /* The named documentation of the element. It takes the documentation with the name
+             * specified in the `documentationName` attribute. For nameless docs, set the `documentationName` to "".
+             *
+             * **Fields**
+             *
+             * `documentationName` is a required field that must be set to the name of the documentation.
+             *
+             * **Editing**
+             *
+             * This is an explicit element -> **supports** editing through the UI.
+             */
+            attribute documentationName default "";
+        }
+        enum heritage {
+            doc
+            /* The heritage of the element. It recursively checks through each element from the heritage
+             * and concatenates them together. E.g. the heritage of `b`:
+             * ```
+             * part def A;
+             * part def B :> A;
+             * part b : B;
+             * ```
+             * will be "B, A".
+             *
+             * **Editing**
+             *
+             * This is an implicit element -> **does not** support editing through the UI.
+             */
+        }
+        enum <CL> constraintLanguage {
+            enum def <ConT> ConstraintType {
+                enum plain;
+                enum assumed;
+                enum asserted;
+                enum required;
+            }
+            doc
+            /* The language representation of a specific named constraint, e.g.:
+             *
+             * require constraint named_constraint {
+             * language "English" <...>
+             * }
+             *
+             * **Fields**
+             *
+             * `constraintName` is a required field that must be set to the non-empty name of the constraint.
+             *
+             * `constraintType` is a required field that must be set to the type of the constraint. Currently supported types are:
+             * - `plain`: The constraint is regular constraint.
+             * - `assumed`: The constraint is an assumed constraint.
+             * - `asserted`: The constraint is an asserted constraint.
+             * - `required`: The constraint is a required constraint.
+             *
+             * `constraintLanguage` is a required field that must be set to the language of the constraint.
+             *
+             * **Editing**
+             *
+             * This is an explicit element -> **supports** editing through the UI.
+             *
+             * Similar to `attributeValue`, the table view requires non-empty `constraintName` due to inheritence
+             */
+            attribute constraintName default null;
+            attribute constraintType default ConstraintType::plain;
+            attribute constraintLanguage default "English";
+        }
+    }
+
+    enum def <Dir> MatrixTraceabilityDirection {
+        enum undirected {
+            doc
+            /* Row can either be in source or target, and column is the other of the two.
+             * Shows "✔" if relationship fits.
+             */
+        }
+        enum row2col {
+            doc
+            /* Source is row, target is column. Shows "↗" if relationship fits. */
+        }
+        enum col2row {
+            doc
+            /* Source is column, target is row. Shows "↙" if relationship fits. */
+        }
+    }
+
+    enum def <Rep> MatrixElementRepresentation {
+        enum name;
+        enum shortName;
+        enum qualifiedName;
+    }
+
+    view def ContentView {
+        attribute includeLibraryElements default false;
+        attribute includeReferenceElements default false;
+        attribute includeAbstractElements default false;
+        attribute exposeFeaturesAndHeritage default false;
+    }
+
+    package <TVD> TableViewDefinitions {
+        view def <TV> TableView :> ContentView {
+            private import ScalarValues::*;
+            attribute maxRowHeight : Integer default 125;
+            attribute globalFilter : String default null;
+            ref columnOrder :> columnViews [0..*];
+            view columnViews [0..*] {
+                doc
+                /* Subset these views to set what columns you'd like to see in your table.
+                 *
+                 * The order is preserved, unless overwritten in `columnOrder`
+                 */
+                attribute featureToRender : CT default CT::qualifiedName {
+                    doc
+                    /* With this attribute you can choose what aspect of the element to visualise in the column.
+                     *
+                     * The choices are available in the `ColumnType` enum.
+                     */
+                }
+                attribute defaultValue default "" {
+                    doc
+                    /* Set what default value to show if no feature value or no documentation is found.
+                     *
+                     * Default is empty cell.
+                     *
+                     * Default Value is rendered as grayed out and in italics.
+                     */
+                }
+                attribute columnWidth : Integer default 150;
+                attribute columnFilter : String default null;
+            }
+        }
+
+        view def <HTV> HierarchicalTableView :> TableView {
+            filter as SysML::Definition istype SysML::Definition;
+            attribute :>> exposeFeaturesAndHeritage = true;
+            attribute defaultCollapse default true;
+        }
+    } // package <TVD> TableViewDefinitions
+
+    package <MVD> MatrixViewDefinitions {
+        view def <MV> MatrixView {
+            view rowView : ContentView [1] {
+                doc
+                /* Inside this view use `expose` and `filter` to specify what you want to see
+                 * as rows in the matrix.
+                 */
+                attribute representation : Rep default Rep::name;
+            }
+            view columnView : ContentView [1] {
+                doc
+                /* Inside this view use `expose` and `filter` to specify what you want to see
+                 * as columns in the matrix.
+                 */
+                attribute representation : Rep default Rep::name;
+                attribute verticalColumnNames default false;
+            }
+            view cellView : ContentView [1] {
+                doc
+                /* Inside this view use `expose`, `filter`, and `direction` to specify what you want to see
+                 * as cells in the matrix.
+                 */
+                attribute :>> includeReferenceElements default true;
+                attribute direction : Dir default Dir::undirected;
+                attribute showWeakTraceability default false;
+                attribute portsAreTransparent default false;
+                /* If true, connections to ports will be treated as direct connections to the port's owner */
+                filter (
+                    as SysML::ConnectionUsage hastype SysML::ConnectionUsage or
+                    as SysML::AllocationUsage hastype SysML::AllocationUsage or
+                    @ RequirementDerivation::derivation
+                );
+            }
+        }
+
+        abstract view def EditableMatrixView :> MatrixView {
+            view :>> rowView {
+                filter as SysML::Definition istype SysML::Definition;
+            }
+            view :>> columnView {
+                filter as SysML::Definition istype SysML::Definition;
+            }
+            view :>> cellView {
+                attribute :>> exposeFeaturesAndHeritage = true;
+            }
+        }
+
+        view def ConnectionMatrixView :> EditableMatrixView {
+            view :>> cellView {
+                filter (
+                    as SysML::ConnectionUsage hastype SysML::ConnectionUsage and
+                    not (@ RequirementDerivation::derivation)
+                );
+            }
+        }
+
+        view def AllocationMatrixView :> EditableMatrixView {
+            view :>> cellView {
+                filter as SysML::AllocationUsage hastype SysML::AllocationUsage;
+            }
+        }
+
+        view def RequirementMatrixView :> EditableMatrixView {
+            view :>> cellView {
+                filter @ RequirementDerivation::derivation;
+            }
+        }
+    } // package <MVD> MatrixViewDefinitions
+} // library package <SV> SysideViews
+
