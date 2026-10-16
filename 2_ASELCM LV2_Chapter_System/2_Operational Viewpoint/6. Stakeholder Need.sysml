@@ -1,4 +1,4 @@
-package Stakeholders_Needs {
+package StakeholdersNeeds {
     doc
     /* Chapter Requirements — 통합된 SystemContext 및 Stakeholders 모델을 
      * 기반으로 한 회원 요구사항(Member Needs) 및 보안 규칙(Security Rules) 정의
@@ -23,7 +23,7 @@ package Stakeholders_Needs {
              * GtWR(Guide to Writing Requirements) C1,C3,C5,C9 확인 대상.
              */
             subject chapter;
-            actor member : Member; // 앞서 정의한 내부 이해관계자
+            actor member : IncoseKoreaChapterMember;
 
             attribute coreValueWhat : String [0..*]; // [추가] 문항7: 구체적인 요구사항 핵심 가치 (What)
             attribute rationale : String [0..*]; // 문항8: 도출 근거 (Why, C8)
@@ -133,71 +133,70 @@ package Stakeholders_Needs {
 
             attribute securityRule : SecurityRuleKind [0..*];
             attribute securityRuleOther : String [0..1];
+        }
+        // --- 개별 회원 보안 규칙 Usage ---
 
-            // --- 개별 회원 보안 규칙 Usage ---
+        requirement lee_su_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'이수';
+            attribute :>> securityRule = ChapterMembers::'이수'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'이수'.securityRuleOther;
+        }
 
-            requirement lee_su_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'이수';
-                attribute :>> securityRule = ChapterMembers::'이수'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'이수'.securityRuleOther;
-            }
+        requirement park_sh_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'박승훈';
+            attribute :>> securityRule = ChapterMembers::'박승훈'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'박승훈'.securityRuleOther;
+        }
 
-            requirement park_sh_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'박승훈';
-                attribute :>> securityRule = ChapterMembers::'박승훈'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'박승훈'.securityRuleOther;
-            }
+        requirement lee_jy_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'이중윤';
+            attribute :>> securityRule = ChapterMembers::'이중윤'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'이중윤'.securityRuleOther;
+        }
 
-            requirement lee_jy_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'이중윤';
-                attribute :>> securityRule = ChapterMembers::'이중윤'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'이중윤'.securityRuleOther;
-            }
+        requirement suh_es_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'서은석';
+            attribute :>> securityRule = ChapterMembers::'서은석'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'서은석'.securityRuleOther;
+        }
 
-            requirement suh_es_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'서은석';
-                attribute :>> securityRule = ChapterMembers::'서은석'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'서은석'.securityRuleOther;
-            }
+        requirement chu_sh_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'추수호';
+            attribute :>> securityRule = ChapterMembers::'추수호'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'추수호'.securityRuleOther;
+        }
 
-            requirement chu_sh_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'추수호';
-                attribute :>> securityRule = ChapterMembers::'추수호'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'추수호'.securityRuleOther;
-            }
+        requirement ku_jm_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'구정모';
+            attribute :>> securityRule = ChapterMembers::'구정모'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'구정모'.securityRuleOther;
+        }
 
-            requirement ku_jm_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'구정모';
-                attribute :>> securityRule = ChapterMembers::'구정모'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'구정모'.securityRuleOther;
-            }
+        requirement kim_hj_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'김희재';
+            attribute :>> securityRule = ChapterMembers::'김희재'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'김희재'.securityRuleOther;
+        }
 
-            requirement kim_hj_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'김희재';
-                attribute :>> securityRule = ChapterMembers::'김희재'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'김희재'.securityRuleOther;
-            }
+        requirement kim_dw_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'김다운';
+            attribute :>> securityRule = ChapterMembers::'김다운'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'김다운'.securityRuleOther;
+        }
 
-            requirement kim_dw_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'김다운';
-                attribute :>> securityRule = ChapterMembers::'김다운'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'김다운'.securityRuleOther;
-            }
-
-            requirement park_hs_security : KnowledgeSharingSecurityRequirement {
-                subject chapter = incoseKoreaChapterContext.chapter;
-                actor member = ChapterMembers::'박홍석';
-                attribute :>> securityRule = ChapterMembers::'박홍석'.securityRule;
-                attribute :>> securityRuleOther = ChapterMembers::'박홍석'.securityRuleOther;
-            }
+        requirement park_hs_security : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = ChapterMembers::'박홍석';
+            attribute :>> securityRule = ChapterMembers::'박홍석'.securityRule;
+            attribute :>> securityRuleOther = ChapterMembers::'박홍석'.securityRuleOther;
         }
     } // package SecurityRules
-} // package Stakeholders_Needs
+} // package StakeholdersNeeds

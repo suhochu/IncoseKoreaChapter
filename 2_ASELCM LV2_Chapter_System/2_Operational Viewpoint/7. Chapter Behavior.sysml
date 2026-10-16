@@ -1,4 +1,4 @@
-package Chapter_Behavior {
+package ChapterBehavior {
     doc
     /* Chapter Behavior — 통합된 시스템 경계 및 인터페이스 모델을 바탕으로
      * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
@@ -70,39 +70,50 @@ package Chapter_Behavior {
          */
 
         state def ChapterLifecycle {
+            doc
+            /* 챕터 성장 단계별 상태머신. */
+            in ref chapter : KoreaChapter;
+
             entry;
             then onlineStudyPhase;
 
             state onlineStudyPhase {
                 doc
-                /* Phase 1: 온라인 스터디 위주 (현재) - 활성 Context 3종만 연결된 상태 */
+                /* Phase 1: 온라인 스터디 및 소규모 Do-Tank 레고블록/AI Skills 구축 단계 (현재) */
             }
 
-            state sponsorshipAndOfflineSeminarPhase {
+            state offlineSeminarAndExpansionPhase {
                 doc
-                /* Phase 2: 기업 스폰서 확보 및 오프라인 세미나 정례화 - Sponsor, PeerSociety 연결 활성화 단계 */
+                /* Phase 2: 참조모델 3건/발표 10건 확보 기반 오프라인 세미나 정례화 및 타 학회 교류 활성화 단계 */
             }
 
             state officialWorkingGroupPhase {
                 doc
-                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 단계 */
+                /* Phase 3: 활동 인원 30명/SEP 10명 확보 기반 INCOSE 본부 공식 WG 발족, 학회 Joint WG 및 자체 인증 단계 */
             }
 
-            transition phase1To2 first onlineStudyPhase then sponsorshipAndOfflineSeminarPhase {
-                doc
-                /* Phase 2 전환(Transition) 조건. 
-                 * 예시: 발표자료 10건 이상 누적 또는 고정 참석 인원 15명 초과.
-                 * 추후 실측 데이터가 모이면 정식 Guard Constraint로 승격 예정.
-                 */
-            }
+            // Phase 1 -> Phase 2 전환 (5대 핵심 MoE 기반 Guard)
+            transition phase1To2
+                first onlineStudyPhase
+                if (
+                (chapter.accumulatedPresentationsCount >= 10 or
+                    chapter.regularActiveMembersCount > 15) and
+                chapter.completedReferenceModelsCount >= 3 and
+                chapter.developedAISkillsCount >= 3 and
+                chapter.sepCertifiedMembersCount >= 3
+            )
+                then offlineSeminarAndExpansionPhase;
 
+            // Phase 2 -> Phase 3 전환 (5대 핵심 MoE 기반 Guard)
             transition phase2To3
-                first sponsorshipAndOfflineSeminarPhase then officialWorkingGroupPhase {
-                doc
-                /* Phase 3 전환(Transition) 조건.
-                 * 예시: 정기 오프라인 세미나 4회 이상 개최 및 기업 스폰서 1곳 이상 확보.
-                 */
-            }
+                first offlineSeminarAndExpansionPhase
+                if (
+                chapter.regularActiveMembersCount >= 30 and
+                chapter.sepCertifiedMembersCount >= 10 and
+                chapter.developedAISkillsCount >= 5 and
+                chapter.completedReferenceModelsCount >= 3
+            )
+                then officialWorkingGroupPhase;
         }
     } // package Lifecycle
-} // package Chapter_Behavior
+} // package ChapterBehavior

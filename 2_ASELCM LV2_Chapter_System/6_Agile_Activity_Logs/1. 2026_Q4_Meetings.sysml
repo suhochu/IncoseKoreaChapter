@@ -3,7 +3,7 @@ package ChapterActivityLogs_2026_Q4 {
     private import Time::*;
     private import ChapterMembers::*;
     private import SystemContext::*;
-    private import Chapter_Behavior::ConOps::*;
+    private import ChapterBehavior::ConOps::*;
     private import ChapterSprint::*;
 
     // [실제 인스턴스] 2026-10-09 킥오프 미팅 Usage (def가 아님!)

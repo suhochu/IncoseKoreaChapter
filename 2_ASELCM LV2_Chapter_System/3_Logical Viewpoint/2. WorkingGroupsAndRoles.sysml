@@ -35,11 +35,9 @@ package WorkingGroupsAndRoles {
                 :>> roleTitle = "Automotive WG Lead";
                 ref :>> assignee = ChapterMembers::'추수호';
             }
-            ref :>> participants = (
-                ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모'
-            );
+            ref :>> participants = (ChapterMembers::'추수호', ChapterMembers::'최성열');
         }
-        part spaceWG : WorkingGroup {
+        part IT : WorkingGroup {
             :>> wgName = "Space Mission System Working Group";
             :>> targetSystemScope = "단일 SW가 아닌 궤도 수송 임무 시스템(Mission System) 전체";
             part :>> lead {
@@ -49,6 +47,27 @@ package WorkingGroupsAndRoles {
             ref :>> participants = (
                 ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운'
             );
+        }
+        part spaceWG : WorkingGroup {
+            :>> wgName = "IT & SW System Working Group";
+            :>> targetSystemScope = "단일 SW가 아닌 IT 및 SW 시스템 전체";
+            part :>> lead {
+                :>> roleTitle = "IT WG Lead";
+                ref :>> assignee = ChapterMembers::'박홍석';
+            }
+            ref :>> participants = (
+                ChapterMembers::'심정환', ChapterMembers::'박홍석', ChapterMembers::'최지원',
+                ChapterMembers::'구정모'
+            );
+        }
+        part Semiconductor : WorkingGroup {
+            :>> wgName = "Semiconductor Related System Working Group";
+            :>> targetSystemScope = "단일 SW가 아닌 반도체 관련 시스템 전체";
+            part :>> lead {
+                :>> roleTitle = "Semiconductor WG Lead";
+                ref :>> assignee = ChapterMembers::'김희재';
+            }
+            ref :>> participants = ChapterMembers::'김희재';
         }
     }
 } // package WorkingGroupsAndRoles

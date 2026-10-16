@@ -1,7 +1,7 @@
 package ChapterSprint {
     private import ChapterMembers::*;
     private import Time::*;
-    private import Chapter_Behavior::ConOps::*;
+    private import ChapterBehavior::ConOps::*;
     private import ScalarValues::*;
 
     // 격주 스프린트 및 킥오프 회의의 공통 템플릿 정의
