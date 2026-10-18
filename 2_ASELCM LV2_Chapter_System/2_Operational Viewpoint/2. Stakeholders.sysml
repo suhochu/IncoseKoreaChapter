@@ -3,12 +3,12 @@ package Stakeholders {
 
     doc
     /* SoI 내부 구성요소로서의 회원 및 기타 이해관계자 정의 */
-
     enum def GiveResourceKind {
         knowledgeSharing; // 지식/경험 공유
         operationsSupport; // 운영/행정 지원
         toolExpertise; // 툴/실습 역량
         networking; // 네트워크/섭외
+        other;
     }
 
     enum def PeerSocietyKind {
@@ -92,13 +92,7 @@ package ChapterMembers {
     private import ScalarValues::*;
 
     // ---- Enum 정의: 설문 2 요구사항 관련 ----
-    enum def GiveResourceKind {
-        knowledgeSharing; // 지식/경험 공유
-        operationsSupport; // 운영/행정 지원
-        toolExpertise; // 툴/실습 역량
-        networking; // 네트워크/섭외
-        other;
-    }
+
 
     enum def OnlineExchangeKind {
         seminar; // 세미나/특강형

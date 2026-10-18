@@ -69,17 +69,35 @@ package SystemContext {
         chartered; // 인가된 상태
     }
 
-    part def KoreaChapter {
+    part def KoreaChapter :> ChapterMetricsAndGuards::ChapterMoEsHolder {
         doc
         /* SoI: INCOSE Korea Chapter. 
          * 내부에 회원(Member), 지식저장소(KnowledgeRepository) 뿐만 아니라
          * 타 학회와 차별화되는 고유 역량(capabilities)을 내재화하여 포함함.
+         * ChapterMoEsHolder를 상속받아 5대 핵심 MoE를 내재화하고 Phase 전환 제약을 평가함.
          */
         attribute charterStatus : ChapterCharterStatusKind = ChapterCharterStatusKind::chartered;
 
         part member : Member [1..*];
         part repository : KnowledgeRepository;
         part capabilities : ChapterCapability [0..*];
+
+        // Phase 1 -> Phase 2 전환 조건 수식 바인딩
+        constraint phase1To2GateCheck : ChapterMetricsAndGuards::Phase1ToPhase2GateConstraint {
+            in presentations = accumulatedPresentationsCount;
+            in refModels = completedReferenceModelsCount;
+            in aiSkills = developedAISkillsCount;
+            in activeMembers = regularActiveMembersCount;
+            in sepMembers = sepCertifiedMembersCount;
+        }
+
+        // Phase 2 -> Phase 3 전환 조건 수식 바인딩
+        constraint phase2To3GateCheck : ChapterMetricsAndGuards::Phase2ToPhase3GateConstraint {
+            in activeMembers = regularActiveMembersCount;
+            in sepMembers = sepCertifiedMembersCount;
+            in aiSkills = developedAISkillsCount;
+            in refModels = completedReferenceModelsCount;
+        }
     }
 
     part def ChapterInContext :> KoreaChapter {

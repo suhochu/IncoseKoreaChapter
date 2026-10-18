@@ -1,8 +1,7 @@
 package ChapterSprint {
     private import ChapterMembers::*;
     private import Time::*;
-    private import Chapter_Behavior::ConOps::*;
-    private import SystemContext::*;
+    private import ChapterBehavior::ConOps::*;
     private import ScalarValues::*;
 
     // SE 모델링 과제 단계 정의
