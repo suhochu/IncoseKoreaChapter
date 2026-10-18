@@ -13,6 +13,10 @@ package WorkingGroupsAndRoles {
         attribute targetSystemScope : String; // 예: "SDV 전체 비히클", "궤도 수송 임무 시스템 전체"
         part lead : ChapterRole;
         ref participants : IncoseKoreaChapterMember [1..*];
+
+        // 워킹그룹이 관리하는 LV1 참조모델 아티팩트 및 과제 제출 이력
+        ref managedModels : SystemContext::ReferenceModelArtifact [0..*];
+        ref submissions : ChapterSprint::AssignmentSubmission [0..*];
     }
 
     part def ChapterLogicalOrganization {

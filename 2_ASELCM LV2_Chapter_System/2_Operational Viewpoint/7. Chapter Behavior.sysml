@@ -58,6 +58,28 @@ package Chapter_Behavior {
             first compileReport;
             then sendToSector;
         }
+
+        action def ReferenceModelDevelopmentProcess {
+            doc
+            /* [Do-Tank 핵심 운영 프로세스]
+             * 과제 가이드 배포 -> 워킹그룹별 모델링 -> 학술자문단(교수진) 리뷰 및 6대 Gate 검증
+             * -> 기업 보안 규정(가상값 치환) 점검 -> KnowledgeRepository 정식 Baseline 등록
+             */
+            in item assignmentGuide : ChapterArtifact;
+            out item approvedModel : ReferenceModelArtifact;
+
+            action issueAssignmentAndGuide; // 1. 과제 및 실무 가이드(PDF) 배포
+            action modelTargetSoIInWorkingGroup; // 2. WG별 LV1 SysML v2 모델 작성
+            action reviewByAcademicAdvisors; // 3. 교수진 피드백(임무/MOE/블랙박스) 및 6대 Gate 심사
+            action verifySecurityCompliance; // 4. 사내 기밀 배제 및 익명화(SecurityRules) 검증
+            action baselineToKnowledgeRepository; // 5. GitHub 및 Google Workspace SSOT 등록
+
+            first issueAssignmentAndGuide;
+            then modelTargetSoIInWorkingGroup;
+            then reviewByAcademicAdvisors;
+            then verifySecurityCompliance;
+            then baselineToKnowledgeRepository;
+        }
     } // package ConOps
 
     // ==========================================
@@ -93,6 +115,7 @@ package Chapter_Behavior {
                 /* Phase 2 전환(Transition) 조건. 
                  * 예시: 발표자료 10건 이상 누적 또는 고정 참석 인원 15명 초과.
                  * 추후 실측 데이터가 모이면 정식 Guard Constraint로 승격 예정.
+                 * 승인된 참조모델 아티팩트 누적 개수(3건 이상)
                  */
             }
 

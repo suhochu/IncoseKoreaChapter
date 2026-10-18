@@ -28,6 +28,8 @@ package SystemContext {
         sysmlDiagram;
         meetingMinutes;
         requirementRecord;
+        referenceModelCode; // LV1 SysML v2 참조모델 코드
+        assignmentGuide; // SE 과제 수행 실무 가이드
     }
 
     item def ChapterArtifact {
@@ -35,6 +37,16 @@ package SystemContext {
         attribute category : ArtifactCategoryKind;
         attribute owner : String;
         attribute locationURL : String;
+    }
+
+    // LV1 참조모델 형상 및 보안 관리를 위한 전용 아티팩트 정의
+    item def ReferenceModelArtifact :> ChapterArtifact {
+        :>> category = ArtifactCategoryKind::referenceModelCode;
+        attribute domainName : String; // 예: "Automotive SDV", "Space Mission"
+        attribute modelVersion : String; // 예: "v0.2-BlackBox"
+        attribute targetSoIName : String; // 예: "2035 도심 자율주행 PBV 셔틀 시스템"
+        attribute isSecurityCleared : Boolean; // 사내 민감데이터 배제 및 가상값 치환 확인 여부
+        attribute satisfiedMemberNeeds : String [0..*]; // 이 모델이 충족하는 회원 요구사항(MemberNeed)
     }
 
     part def KnowledgeRepository {

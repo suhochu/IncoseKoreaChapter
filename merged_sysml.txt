@@ -1094,6 +1094,7 @@ package SystemContext {
         attribute title : String;
         attribute category : ArtifactCategoryKind;
         attribute owner : String;
+        attribute locationURL : String;
     }
 
     part def KnowledgeRepository {
@@ -1140,13 +1141,17 @@ package SystemContext {
 
         // 2) 역량 인스턴스 구체화 (ChapterCapabilities 파일 내용 병합)
         part globalStandardFastAdoption : ChapterCapability redefines capabilities {
-            doc /* 예시 인스턴스 */
-            attribute :>> descriptionText = "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
+            doc
+            /* 예시 인스턴스 */
+            attribute :>> descriptionText =
+                "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
         }
 
         part handsOnToolPractice : ChapterCapability redefines capabilities {
-            doc /* 예시 인스턴스 */
-            attribute :>> descriptionText = "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
+            doc
+            /* 예시 인스턴스 */
+            attribute :>> descriptionText =
+                "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
         }
     }
 
@@ -1408,7 +1413,7 @@ package Chapter_Behavior {
             doc
             /* 내부 비동기/실시간 지식 교환 프로세스 (Internal Flow) */
 
-            in item mode : ExchangeModeKind;
+            in attribute mode : ExchangeModeKind;
             in item referenceResource : HandbookResourceItem [0..1]; // TechOps 등 외부 문헌 리소스 활용
 
             out item producedArtifact : ChapterArtifact; // 논의 후 생성된 지식 자산
@@ -1470,7 +1475,7 @@ package Chapter_Behavior {
                 doc
                 /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 단계 */
             }
-            
+
             transition phase1To2 first onlineStudyPhase then sponsorshipAndOfflineSeminarPhase {
                 doc
                 /* Phase 2 전환(Transition) 조건. 
@@ -1489,6 +1494,149 @@ package Chapter_Behavior {
         }
     } // package Lifecycle
 } // package Chapter_Behavior
+
+##2_ASELCM LV2_Chapter_System/3_Logical Viewpoint/1. ChapterSprint.sysml##
+package ChapterSprint {
+    private import ChapterMembers::*;
+    private import Time::*;
+    private import Chapter_Behavior::ConOps::*;
+    private import ScalarValues::*;
+
+    // 격주 스프린트 및 킥오프 회의의 공통 템플릿 정의
+    action def ChapterSprintMeeting :> KnowledgeExchangeSession {
+        attribute meetingDate : Iso8601DateTimeStructure;
+        attribute location : String;
+        ref attendees : IncoseKoreaChapterMember [1..*];
+        attribute keyDecisions : String [0..*];
+    }
+
+    action def ActionItemTask {
+        ref owner : IncoseKoreaChapterMember [1..*];
+        attribute taskDescription : String;
+        attribute dueDate : String;
+    }
+} // package ChapterSprint
+
+##2_ASELCM LV2_Chapter_System/3_Logical Viewpoint/2. WorkingGroupsAndRoles.sysml##
+package WorkingGroupsAndRoles {
+    private import ScalarValues::*;
+    private import Stakeholders::*;
+    private import ChapterMembers::*;
+
+    part def ChapterRole {
+        attribute roleTitle : String;
+        ref assignee : IncoseKoreaChapterMember [0..*];
+    }
+
+    part def WorkingGroup {
+        attribute wgName : String;
+        attribute targetSystemScope : String; // 예: "SDV 전체 비히클", "궤도 수송 임무 시스템 전체"
+        part lead : ChapterRole;
+        ref participants : IncoseKoreaChapterMember [1..*];
+    }
+
+    part def ChapterLogicalOrganization {
+        part representative : ChapterRole {
+            :>> roleTitle = "Chapter Representative (챕터 대표)";
+            ref :>> assignee = ChapterMembers::'이중윤'; // 실제 회원 Part와 연결
+        }
+        part secretary : ChapterRole {
+            :>> roleTitle = "General Secretary (총무 및 운영 담당)";
+            ref :>> assignee = ChapterMembers::'추수호'; // 실제 회원 Part와 연결
+        }
+        part academicAdvisors : ChapterRole {
+            :>> roleTitle = "Academic Advisory Group (교수진 자문 및 리뷰)";
+            ref :>> assignee = (ChapterMembers::'이중윤', ChapterMembers::'서은석');
+        }
+        part automotiveWG : WorkingGroup {
+            :>> wgName = "Automotive SDV Working Group";
+            :>> targetSystemScope = "부품 단위가 아닌 SDV 및 섀시를 포함한 Vehicle 전체 수준";
+            part :>> lead {
+                :>> roleTitle = "Automotive WG Lead";
+                ref :>> assignee = ChapterMembers::'추수호';
+            }
+            ref :>> participants = (
+                ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모'
+            );
+        }
+        part spaceWG : WorkingGroup {
+            :>> wgName = "Space Mission System Working Group";
+            :>> targetSystemScope = "단일 SW가 아닌 궤도 수송 임무 시스템(Mission System) 전체";
+            part :>> lead {
+                :>> roleTitle = "Space WG Lead";
+                ref :>> assignee = ChapterMembers::'이수';
+            }
+            ref :>> participants = (
+                ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운'
+            );
+        }
+    }
+} // package WorkingGroupsAndRoles
+
+##2_ASELCM LV2_Chapter_System/6_Agile_Activity_Logs/1. 2026_Q4_Meetings.sysml##
+package ChapterActivityLogs_2026_Q4 {
+    private import ScalarValues::*;
+    private import Time::*;
+    private import ChapterMembers::*;
+    private import SystemContext::*;
+    private import Chapter_Behavior::ConOps::*;
+    private import ChapterSprint::*;
+
+    // [실제 인스턴스] 2026-10-09 킥오프 미팅 Usage (def가 아님!)
+    action kickOffMeeting_20261009 : ChapterSprintMeeting {
+        in :>> mode = ExchangeModeKind::handsOnLabStyle;
+
+        attribute :>> meetingDate : Iso8601DateTimeStructure {
+            :>> year = 2026;
+            :>> month = 10;
+            :>> day = 9;
+            :>> hour = 18;
+            :>> minute = 0;
+            :>> second = 0;
+            :>> hourOffset = 9; // KST 시차 (UTC+9)
+            :>> minuteOffset = 0;
+        }
+        :>> location = "사당역 주변 셀스스토리 8인 회의실 / 우담정";
+
+        // 문자열이 아니라 ChapterMembers에 정의된 실제 회원 Part들을 참조!
+        ref :>> attendees = (
+            ChapterMembers::'이중윤', ChapterMembers::'서은석', ChapterMembers::'추수호',
+            ChapterMembers::'최성열', ChapterMembers::'이수', ChapterMembers::'박홍석',
+        );
+
+        :>> keyDecisions = (
+            "싱크탱크(Think-Tank)가 아닌 실제 산출물을 만드는 도탱크(Do-Tank) 지향",
+            "자동차는 SDV 비히클 전체, 우주는 임무 시스템 전체를 대상으로 Operational Stakeholder Requirement부터 하향식 모델링",
+            "기업 내부 민감 데이터 문서화 금지, AI 및 공개 데이터를 기반으로 3개월 단위 레고 블록 모델링 수행",
+            "공식 소통은 카카오톡, 저장소는 Google Workspace 및 GitHub, 격주(2주) 웹 미팅 및 분기(3개월) 오프라인 모임 진행",
+        );
+
+        out item :>> producedArtifact : ChapterArtifact {
+            :>> title = "INCOSE Korea KickOff Meeting (20261009) - 회의록";
+            :>> category = ArtifactCategoryKind::meetingMinutes;
+            :>> owner = "추수호";
+            :>> locationURL =
+                "https://drive.google.com/drive/folders/1Ngr1SpzuJ0gaTZlJnZlnFDw20FWqY_7T?usp=drive_link";
+        }
+
+        // 후속 액션 아이템 인스턴스
+        action ai1_setupChannels : ActionItemTask {
+            ref :>> owner = ChapterMembers::'추수호';
+            :>> taskDescription =
+                "카카오톡 단체방 개설 및 미참석 3명 동의 후 초대, 구글 워크스페이스 및 GitHub 세팅";
+            :>> dueDate = "Immediate";
+        }
+        action ai2_selectTargetSoI : ActionItemTask {
+            ref :>> owner = (
+                ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'이수',
+                ChapterMembers::'박홍석',
+            );
+            :>> taskDescription =
+                "각자 모델링할 대상 시스템(Engineering Question & SoI) 선정 및 1차 웹 미팅 발표 준비";
+            :>> dueDate = "2026-10-23 (Sprint 1)";
+        }
+    }
+} // package ChapterActivityLogs_2026_Q4
 
 ##3_Meeting/KickOff_20261009.sysml##
 package KickOff_Meeting_20261009 {

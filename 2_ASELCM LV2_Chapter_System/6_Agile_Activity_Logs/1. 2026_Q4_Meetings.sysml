@@ -60,4 +60,28 @@ package ChapterActivityLogs_2026_Q4 {
             :>> dueDate = "2026-10-23 (Sprint 1)";
         }
     }
+
+    action assignment2_BlackBoxAndConOps : ModelingAssignment {
+        :>> assignmentNo = 2;
+        :>> stage = SEAssignmentStageKind::Stage2_BlackBoxAndConOps;
+        :>> taskDescription =
+            "LV1 대상시스템(SoI) 블랙박스 정의, 임무/MOE 설정 및 5-Tuple 운용 시나리오(ConOps) 모델링";
+        :>> dueDate = "2026-Q4 Sprint 2";
+        :>> mandatoryCheckpoints = (
+            "[피드백 1] 운용 개념(ConOps)은 대상시스템의 존재목적(임무/사업목표)을 달성하는 모습을 표현할 것",
+            "[피드백 2] 임무/사업 목표 서술 및 달성 판정용 MOE 정의 시 목표값(Target)/한계값(Threshold)/단위(Unit)를 지정할 것",
+            "[피드백 3] 운용 시점의 외부 인프라 가정을 명시하고, 블랙박스 SoI가 외부 환경(조직/물리/자연)과 상호작용하는 것에 초점을 둘 것",
+            "[가이드 Gate 1~6] Whole-System, Solution-Free, ODD 3대 장소 그룹핑, 포트 대칭성(Type Symmetry), 고립 액터 방지 준수",
+        );
+
+        part profFeedback_202610 : AdvisoryFeedback :> feedbackHistory {
+            ref :>> reviewer = ChapterMembers::'이중윤';
+            :>> feedbackItems = (
+                "운용 개념이 단순 기능 나열이 아니라 존재 목적(임무/사업 목표) 달성 모습을 보여주어야 함",
+                "MOE에 정량적 구조(목표값/한계값/단위) 부여 필수 (수치 자체의 정확성보다 구조화가 중요)",
+                "블랙박스 개념 강조: 내부 구조를 숨기고 운용 시점 인프라 가정 하의 외부 환경 상호작용에만 집중할 것",
+            );
+            :>> isResolved = false;
+        }
+    }
 } // package ChapterActivityLogs_2026_Q4
