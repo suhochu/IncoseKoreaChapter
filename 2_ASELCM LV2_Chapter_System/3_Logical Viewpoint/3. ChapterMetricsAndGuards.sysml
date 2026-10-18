@@ -12,13 +12,14 @@ package ChapterMetricsAndGuards {
     // 1. 5대 핵심 성과 지표 홀더 (Core 5 MoEs Holder)
     // =========================================================================
     part def ChapterMoEsHolder {
-        doc /* KoreaChapter(SoI)가 상속받는 5대 핵심 정량 지표(MoEs) */
+        doc
+        /* KoreaChapter(SoI)가 상속받는 5대 핵심 정량 지표(MoEs) */
 
         attribute accumulatedPresentationsCount : Integer default 1; // MoE 1: 누적 발표/사례 자료 수 (목표 >= 10)
         attribute completedReferenceModelsCount : Integer default 0; // MoE 2: 완성된 도메인 참조모델 수 (목표 >= 3)
-        attribute developedAISkillsCount : Integer default 0;        // MoE 3: 단계별 AI Skills 수 (Phase2 >= 3, Phase3 >= 5)
-        attribute regularActiveMembersCount : Integer default 12;    // MoE 4: 고정 활동 인원 수 (Phase2 > 15, Phase3 >= 30)
-        attribute sepCertifiedMembersCount : Integer default 1;      // MoE 5: SEP 자격 보유자 수 (Phase2 >= 3, Phase3 >= 10)
+        attribute developedAISkillsCount : Integer default 0; // MoE 3: 단계별 AI Skills 수 (Phase2 >= 3, Phase3 >= 5)
+        attribute regularActiveMembersCount : Integer default 12; // MoE 4: 고정 활동 인원 수 (Phase2 > 15, Phase3 >= 30)
+        attribute sepCertifiedMembersCount : Integer default 1; // MoE 5: SEP 자격 보유자 수 (Phase2 >= 3, Phase3 >= 10)
     }
 
     // =========================================================================
@@ -38,10 +39,10 @@ package ChapterMetricsAndGuards {
         in activeMembers : Integer;
         in sepMembers : Integer;
 
-        ((presentations >= 10) or (activeMembers > 15)) and
-        (refModels >= 3) and
-        (aiSkills >= 3) and
-        (sepMembers >= 3)
+        (presentations >= 10 or activeMembers > 15) and
+        refModels >= 3 and
+        aiSkills >= 3 and
+        sepMembers >= 3
     }
 
     // =========================================================================
@@ -60,9 +61,6 @@ package ChapterMetricsAndGuards {
         in aiSkills : Integer;
         in refModels : Integer;
 
-        (activeMembers >= 30) and
-        (sepMembers >= 10) and
-        (aiSkills >= 5) and
-        (refModels >= 3)
+        activeMembers >= 30 and sepMembers >= 10 and aiSkills >= 5 and refModels >= 3
     }
 } // package ChapterMetricsAndGuards

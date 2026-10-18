@@ -21,6 +21,7 @@ package SystemContext {
         notion;
         slackOrDiscord;
         googleWorkspace;
+        github;
         other;
     }
     enum def ArtifactCategoryKind {
@@ -28,8 +29,9 @@ package SystemContext {
         sysmlDiagram;
         meetingMinutes;
         requirementRecord;
-        referenceModelCode; // LV1 SysML v2 참조모델 코드
-        assignmentGuide; // SE 과제 수행 실무 가이드
+        referenceModelCode; // 3_ASELCM_LV1_Target_Reference_Models 참조모델 코드
+        assignmentGuide; // SE 과제 수행 실무 가이드 문서
+        advisoryFeedbackRecord; // 학술자문단(교수진) 모델 리뷰 및 피드백 기록
     }
 
     item def ChapterArtifact {
@@ -39,21 +41,35 @@ package SystemContext {
         attribute locationURL : String;
     }
 
-    // LV1 참조모델 형상 및 보안 관리를 위한 전용 아티팩트 정의
+    // LV1 참조모델 과제 산출물 및 버전·보안·게이트 승인 상태를 관리하는 전용 아티팩트
     item def ReferenceModelArtifact :> ChapterArtifact {
+        doc
+        /* 각 워킹그룹이 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold)를 
+         * 상속받아 작성한 도메인 참조모델 산출물 메타데이터.
+         */
         :>> category = ArtifactCategoryKind::referenceModelCode;
-        attribute domainName : String; // 예: "Automotive SDV", "Space Mission"
-        attribute modelVersion : String; // 예: "v0.2-BlackBox"
-        attribute targetSoIName : String; // 예: "2035 도심 자율주행 PBV 셔틀 시스템"
-        attribute isSecurityCleared : Boolean; // 사내 민감데이터 배제 및 가상값 치환 확인 여부
-        attribute satisfiedMemberNeeds : String [0..*]; // 이 모델이 충족하는 회원 요구사항(MemberNeed)
+
+        attribute domainName : String; // 예: "Automotive SDV", "Space Mission System"
+        attribute targetSoIName : String; // Whole-System 대상시스템(SoI) 명칭
+        attribute modelVersion : String; // 예: "v0.1-Scaffold", "v0.2-BlackBox-ConOps"
+        attribute modelFilePath : String [0..1]; // 3_ASELCM_LV1_Target_Reference_Models 내 경로
+
+        // LV3 거버넌스(Governance.sysml) 정책 및 게이트 준수 상태 플래그
+        attribute inheritsCommonScaffold : Boolean default true; // 공통 스캐폴드 상속 여부
+        attribute isSecurityCleared : Boolean default false; // 사내 민감데이터 배제 및 가상값 치환 완료 여부
+        attribute isGateApproved : Boolean default false; // 교수님 피드백 3종 + 6대 Gate 통과 여부
     }
 
     part def KnowledgeRepository {
         doc
-        /* Single Source of Truth. 플랫폼 확정 후 구체화 예정. */
-        attribute platform : PlatformKind;
+        /* Single Source of Truth (Google Workspace & GitHub).
+         * 일반 문헌/회의록뿐만 아니라 검증을 통과한 LV1 참조모델 Baseline을 통합 관리함.
+         */
+        attribute platform : PlatformKind [1..*];
         part artifact : ChapterArtifact [0..*];
+
+        // 게이트 심사를 통과하여 정식 등록된 LV1 참조모델 목록 (Lifecycle 전환 평가 기준)
+        part approvedReferenceModels : ReferenceModelArtifact [0..*] :> artifact;
     }
 
     // ---- 3.3 Chapter Capability (챕터 고유 역량) ----
@@ -110,22 +126,29 @@ package SystemContext {
         port peerInterface : ChapterPeerInterfacePort [0..1];
 
         // 2) 역량 인스턴스 구체화 (ChapterCapabilities 파일 내용 병합)
-        part globalStandardFastAdoption : ChapterCapability redefines capabilities {
+        part globalStandardFastAdoption : ChapterCapability :> capabilities {
             doc
             /* 예시 인스턴스 */
             attribute :>> descriptionText =
                 "해외 SE 표준/트렌드의 빠른 국내 도입 및 영어 원문 해독 네트워크";
         }
 
-        part handsOnToolPractice : ChapterCapability redefines capabilities {
+        part handsOnToolPractice : ChapterCapability :> capabilities {
             doc
             /* 예시 인스턴스 */
             attribute :>> descriptionText =
                 "MBSE 툴(Cameo, SysML v2 등)을 직접 실습해볼 수 있는 유일한 채널";
         }
+
+        part domainReferenceModelCreation : ChapterCapability :> capabilities {
+            doc
+            /* [추가] Do-Tank 핵심 역량: 도메인별 실무형 SysML v2 참조모델 자체 개발 */
+            attribute :>> descriptionText =
+                "운용개념(ConOps) 및 블랙박스 정의부터 아키텍처·시뮬레이션까지 이어지는 도메인 참조모델 공동 구축";
+        }
     }
 
-    // ---- 3.4 통합 System Context Baseline ----
+    // ---- 3.5 통합 System Context Baseline ----
     part incoseKoreaChapterContext {
         doc
         /* 10월 킥오프 baseline 기준 System Context 인스턴스.

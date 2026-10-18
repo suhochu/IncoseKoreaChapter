@@ -6,7 +6,9 @@ package ChapterActivityLogs_2026_Q4 {
     private import ChapterBehavior::ConOps::*;
     private import ChapterSprint::*;
 
-    // [실제 인스턴스] 2026-10-09 킥오프 미팅 Usage (def가 아님!)
+    // =========================================================================
+    // 1. [실제 인스턴스] 2026-10-09 킥오프 미팅 Usage
+    // =========================================================================
     action kickOffMeeting_20261009 : ChapterSprintMeeting {
         in :>> mode = ExchangeModeKind::handsOnLabStyle;
 
@@ -61,27 +63,94 @@ package ChapterActivityLogs_2026_Q4 {
         }
     }
 
+    // =========================================================================
+    // 2. SE 블랙박스 정의 및 운용시나리오(ConOps) 개발 과제 실무 가이드 아티팩트 및 교수님 피드백 반영 과제 정의
+    // =========================================================================
+    item blackBoxConOpsGuide_PDF : ChapterArtifact {
+        :>> title = "SE 블랙박스 정의 및 운용시나리오(ConOps) 개발 실무 가이드";
+        :>> category = ArtifactCategoryKind::assignmentGuide;
+        :>> owner = "추수호 / 학술자문단";
+        :>> locationURL =
+            "https://drive.google.com/file/d/1QX67QduPw5aJVv79QpfobkCHERMwHphw/view?usp=drive_link";
+    }
+
     action assignment2_BlackBoxAndConOps : ModelingAssignment {
         :>> assignmentNo = 2;
         :>> stage = SEAssignmentStageKind::Stage2_BlackBoxAndConOps;
+        ref :>> guideArtifact = blackBoxConOpsGuide_PDF;
+        :>> scaffoldPackageName = "LV1_BlackBox_ConOps_Scaffold";
+
+        ref :>> owner = (
+            ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모',
+            ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
+            ChapterMembers::'박홍석',
+        );
         :>> taskDescription =
-            "LV1 대상시스템(SoI) 블랙박스 정의, 임무/MOE 설정 및 5-Tuple 운용 시나리오(ConOps) 모델링";
+            "LV1_BlackBox_ConOps_Scaffold를 상속받아 워킹그룹별 대상시스템(SoI)의 임무/MOE, 운용시점 인프라 가정, 3대 외부환경 컨텍스트 및 5-Tuple 블랙박스 ConOps 시나리오 작성";
         :>> dueDate = "2026-Q4 Sprint 2";
+
         :>> mandatoryCheckpoints = (
-            "[피드백 1] 운용 개념(ConOps)은 대상시스템의 존재목적(임무/사업목표)을 달성하는 모습을 표현할 것",
-            "[피드백 2] 임무/사업 목표 서술 및 달성 판정용 MOE 정의 시 목표값(Target)/한계값(Threshold)/단위(Unit)를 지정할 것",
-            "[피드백 3] 운용 시점의 외부 인프라 가정을 명시하고, 블랙박스 SoI가 외부 환경(조직/물리/자연)과 상호작용하는 것에 초점을 둘 것",
-            "[가이드 Gate 1~6] Whole-System, Solution-Free, ODD 3대 장소 그룹핑, 포트 대칭성(Type Symmetry), 고립 액터 방지 준수",
+            "1. [교수님 피드백 1] 운용 개념(ConOps)이 대상시스템의 존재목적(임무 또는 사업목표)을 달성하는 모습을 표현하고 satisfy 관계로 연결할 것",
+            "2. [교수님 피드백 2] 임무/사업 목표 서술(What/Why) 및 달성 판정용 운용효과성측정지표(MOE) 정의 시 목표값(Target)/한계값(Threshold)/단위(Unit)를 지정할 것",
+            "3. [교수님 피드백 3] 운용 시점의 인프라 가정을 명시하고, 블랙박스 SoI가 외부 환경(조직/물리/자연)과 상호작용하는 것에 초점을 두고 시나리오를 작성할 것",
+            "4. [실무 가이드 6대 Gate] Whole-System(Gate 1), Solution-Free 블랙박스(Gate 2), 시점 4대 전제 연계(Gate 3), ODD 3대 장소 그룹핑(Gate 4), 3대 외부 범위 각 2개 이상 및 외란 아이템화(Gate 5), 고립 액터 방지(Gate 6) 준수",
         );
 
-        part profFeedback_202610 : AdvisoryFeedback :> feedbackHistory {
-            ref :>> reviewer = ChapterMembers::'이중윤';
-            :>> feedbackItems = (
-                "운용 개념이 단순 기능 나열이 아니라 존재 목적(임무/사업 목표) 달성 모습을 보여주어야 함",
-                "MOE에 정량적 구조(목표값/한계값/단위) 부여 필수 (수치 자체의 정확성보다 구조화가 중요)",
-                "블랙박스 개념 강조: 내부 구조를 숨기고 운용 시점 인프라 가정 하의 외부 환경 상호작용에만 집중할 것",
+        // 교수님 피드백 정식 레코드
+        part profFeedback_202610 : AdvisoryFeedback :> advisoryFeedbacks {
+            ref :>> reviewers = (ChapterMembers::'이중윤', ChapterMembers::'서은석',);
+            :>> feedbackDate = "2026-10";
+            :>> feedbackPoints = (
+                "1. 운용 개념은 대상시스템의 존재목적(임무 또는 사업목표)을 달성하는 모습을 표현해야 함.",
+                "2. 임무/사업 목표에 대한 서술 및 달성 여부에 대한 운용효과성측정지표(MOE) 정의 및 목표값/한계값/단위 지정 (수치 자체는 정확할 필요 없음).",
+                "3. 운용 시나리오 작성 시 블랙박스 개념 강조 -> 블랙박스 대상시스템이 외부 환경과 상호작용하는 것에 초점을 두고 운용 시나리오 작성 (이 외부 환경에 대한 가정은 운용 시점의 인프라에 대한 가정임).",
             );
-            :>> isResolved = false;
+            :>> isResolvedInModel = false;
+        }
+    }
+
+    // =========================================================================
+    // 3. 워킹그룹별 SE 블랙박스 정의 및 운용시나리오(ConOps) 개발 과제 제출물 트래킹 슬롯
+    // =========================================================================
+    item automotiveWG_Sub_Assignment2 : AssignmentSubmission {
+        ref :>> targetAssignment = assignment2_BlackBoxAndConOps;
+        :>> workingGroupName = "Automotive SDV Working Group";
+        ref :>> submitters = (
+            ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모',
+        );
+        :>> status = SubmissionStatusKind::inProgress;
+
+        part :>> submittedModel : ReferenceModelArtifact {
+            :>> title = "Automotive SDV Black-Box & ConOps Reference Model";
+            :>> owner = "Automotive SDV WG";
+            :>> locationURL = "3_ASELCM_LV1_Target_Reference_Models/1_Automotive_SDV_WG/";
+            :>> domainName = "Automotive & Smart Mobility";
+            :>> targetSoIName = "TBD (Whole-System SDV / Autonomous Mobility System)";
+            :>> modelVersion = "v0.1-Draft";
+            :>> inheritsCommonScaffold = true;
+            :>> isSecurityCleared = true;
+            :>> isGateApproved = false;
+        }
+    }
+
+    item spaceWG_Sub_Assignment2 : AssignmentSubmission {
+        ref :>> targetAssignment = assignment2_BlackBoxAndConOps;
+        :>> workingGroupName = "Space Mission System Working Group";
+        ref :>> submitters = (
+            ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
+        );
+        :>> status = SubmissionStatusKind::inProgress;
+
+        part :>> submittedModel : ReferenceModelArtifact {
+            :>> title = "Space Mission System Black-Box & ConOps Reference Model";
+            :>> owner = "Space Mission WG";
+            :>> locationURL = "3_ASELCM_LV1_Target_Reference_Models/2_Space_Mission_WG/";
+            :>> domainName = "Defense & Aerospace";
+            :>> targetSoIName = "TBD (Whole-System Orbital Transport / Exploration Mission System)";
+            :>> modelVersion = "v0.1-Draft";
+            :>> inheritsCommonScaffold = true;
+            :>> isSecurityCleared = true;
+            :>> isGateApproved = false;
         }
     }
 } // package ChapterActivityLogs_2026_Q4

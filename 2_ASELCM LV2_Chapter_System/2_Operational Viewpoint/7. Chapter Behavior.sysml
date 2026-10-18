@@ -4,15 +4,17 @@ package ChapterBehavior {
      * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
      */
 
+    private import ScalarValues::*;
     private import SystemContext::*;
     private import ActorAndInterfaces::*;
+    private import INCOSE_Korea_Chapter_Governance::QualityAssurance::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)
     // ==========================================
     package ConOps {
         doc
-        /* 온라인 지식교환 방식 및 상위 시스템 보고 프로세스의 동적 행위 */
+        /* 온라인 지식교환 방식, Do-Tank 참조모델 개발 프로세스 및 상위 시스템 보고 프로세스의 동적 행위 */
 
         enum def ExchangeModeKind {
             seminarStyle; // 세미나/특강형
@@ -43,6 +45,49 @@ package ChapterBehavior {
             then archiveToKnowledgeStore;
         }
 
+        // [신규] Do-Tank 핵심 운영 프로세스: SE 과제 수행 및 LV1 참조모델 개발·검증 워크플로우
+        action def ReferenceModelDevelopmentProcess {
+            doc
+            /* [LV2 Do-Tank 참조모델 개발 및 품질 게이트 프로세스]
+             * 1) 과제 가이드(PDF) 및 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold) 배포
+             * 2) 워킹그룹별 도메인 모델링 수행 (블랙박스 SoI, 임무/MOE, 시점 인프라 가정, 5-Tuple 시나리오)
+             * 3) 학술자문단(교수진) 피드백 3대 원칙 및 가이드 6대 자체 감사 게이트(Gate 1~6) 심사
+             * 4) 기업 보안 규정(사내 데이터 배제 및 가상값 치환) 준수 확인
+             * 5) KnowledgeRepository 및 GitHub 메인 브랜치 Baseline 정식 등록
+             */
+            in item assignmentGuide : ChapterArtifact;
+            out item approvedBaselineModel : ReferenceModelArtifact;
+
+            action issueAssignmentAndScaffold {
+                doc
+                /* 과제 목표, 실무 가이드 및 공통 스캐폴드 코드 배포 */
+            }
+            action developDomainModelInWG {
+                doc
+                /* 워킹그룹이 스캐폴드를 상속(:>)하여 도메인 모델 작성 */
+            }
+            action reviewByAdvisorsAndVerifyGates {
+                doc
+                /* 교수님 피드백 1(존재목적 달성 표현), 피드백 2(MOE 목표값/한계값/단위),
+                 * 피드백 3(운용시점 인프라 가정 및 블랙박스 상호작용) 및 Gate 1~6 충족 여부 검증
+                 */
+            }
+            action verifySecurityAndAnonymization {
+                doc
+                /* 회사명/프로젝트명 비언급 및 민감 수치 가상값 치환 여부 점검 */
+            }
+            action baselineToKnowledgeRepository {
+                doc
+                /* 검증 통과 모델을 KnowledgeRepository::approvedReferenceModels에 정식 등록 */
+            }
+
+            first issueAssignmentAndScaffold;
+            then developDomainModelInWG;
+            then reviewByAdvisorsAndVerifyGates;
+            then verifySecurityAndAnonymization;
+            then baselineToKnowledgeRepository;
+        }
+
         action def SectorReporting {
             doc
             /* 상위 시스템(INCOSE Asia-Oceania Sector)으로의 활동 결과 보고 프로세스 (External Flow).
@@ -58,28 +103,6 @@ package ChapterBehavior {
             first compileReport;
             then sendToSector;
         }
-
-        action def ReferenceModelDevelopmentProcess {
-            doc
-            /* [Do-Tank 핵심 운영 프로세스]
-             * 과제 가이드 배포 -> 워킹그룹별 모델링 -> 학술자문단(교수진) 리뷰 및 6대 Gate 검증
-             * -> 기업 보안 규정(가상값 치환) 점검 -> KnowledgeRepository 정식 Baseline 등록
-             */
-            in item assignmentGuide : ChapterArtifact;
-            out item approvedModel : ReferenceModelArtifact;
-
-            action issueAssignmentAndGuide; // 1. 과제 및 실무 가이드(PDF) 배포
-            action modelTargetSoIInWorkingGroup; // 2. WG별 LV1 SysML v2 모델 작성
-            action reviewByAcademicAdvisors; // 3. 교수진 피드백(임무/MOE/블랙박스) 및 6대 Gate 심사
-            action verifySecurityCompliance; // 4. 사내 기밀 배제 및 익명화(SecurityRules) 검증
-            action baselineToKnowledgeRepository; // 5. GitHub 및 Google Workspace SSOT 등록
-
-            first issueAssignmentAndGuide;
-            then modelTargetSoIInWorkingGroup;
-            then reviewByAcademicAdvisors;
-            then verifySecurityCompliance;
-            then baselineToKnowledgeRepository;
-        }
     } // package ConOps
 
     // ==========================================
@@ -87,55 +110,55 @@ package ChapterBehavior {
     // ==========================================
     package Lifecycle {
         doc
-        /* 챕터 성장 단계별 상태머신. Phase 2 진입 시 실측 데이터를 기반으로 
-         * 정식 Guard 조건식을 수립할 수 있도록 구조화함.
+        /* 챕터 성장 단계별 상태머신.
+         * LV3 거버넌스의 PhaseTransitionGateCondition(승인된 참조모델 3건 이상, 발표자료 10건 이상)과 연동됨.
          */
 
         state def ChapterLifecycle {
-            doc
-            /* 챕터 성장 단계별 상태머신. */
-            in ref chapter : KoreaChapter;
+            attribute approvedModelsCount : Integer default 0;
+            attribute seminarArtifactsCount : Integer default 0;
 
             entry;
             then onlineStudyPhase;
 
             state onlineStudyPhase {
                 doc
-                /* Phase 1: 온라인 스터디 및 소규모 Do-Tank 레고블록/AI Skills 구축 단계 (현재) */
+                /* Phase 1: 온라인 스터디 및 도메인별 LV1 참조모델 초기 개발 단계 (현재)
+                 * - 활성 Context 3종만 연결된 상태
+                 * - 워킹그룹별 블랙박스 정의 및 ConOps 모델링 과제 수행 중
+                 */
             }
 
-            state offlineSeminarAndExpansionPhase {
+            state sponsorshipAndOfflineSeminarPhase {
                 doc
-                /* Phase 2: 참조모델 3건/발표 10건 확보 기반 오프라인 세미나 정례화 및 타 학회 교류 활성화 단계 */
+                /* Phase 2: 기업 스폰서 확보 및 오프라인 세미나 정례화 단계
+                 * - 교육/실무 참고용 LV1 참조모델 3건 이상 확보 및 발표자료 10건 이상 누적 시 진입
+                 * - Sponsor, PeerSociety(KOSSE/KCOSE) 연결 활성화
+                 */
             }
 
             state officialWorkingGroupPhase {
                 doc
-                /* Phase 3: 활동 인원 30명/SEP 10명 확보 기반 INCOSE 본부 공식 WG 발족, 학회 Joint WG 및 자체 인증 단계 */
+                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 및 자체 아키텍트 인증 프로그램 운영 단계 */
             }
 
-            // Phase 1 -> Phase 2 전환 (5대 핵심 MoE 기반 Guard)
             transition phase1To2
                 first onlineStudyPhase
-                if (
-                (chapter.accumulatedPresentationsCount >= 10 or
-                    chapter.regularActiveMembersCount > 15) and
-                chapter.completedReferenceModelsCount >= 3 and
-                chapter.developedAISkillsCount >= 3 and
-                chapter.sepCertifiedMembersCount >= 3
-            )
-                then offlineSeminarAndExpansionPhase;
+                if approvedModelsCount >= 3 and seminarArtifactsCount >= 10
+                then sponsorshipAndOfflineSeminarPhase {
+                doc
+                /* Phase 2 전환(Transition) 조건 (LV3 PhaseTransitionGateCondition 반영):
+                 * 승인된 도메인 참조모델(ReferenceModelArtifact) 3건 이상 & 누적 세미나/발표 자료 10건 이상 달성
+                 */
+            }
 
-            // Phase 2 -> Phase 3 전환 (5대 핵심 MoE 기반 Guard)
             transition phase2To3
-                first offlineSeminarAndExpansionPhase
-                if (
-                chapter.regularActiveMembersCount >= 30 and
-                chapter.sepCertifiedMembersCount >= 10 and
-                chapter.developedAISkillsCount >= 5 and
-                chapter.completedReferenceModelsCount >= 3
-            )
-                then officialWorkingGroupPhase;
+                first sponsorshipAndOfflineSeminarPhase then officialWorkingGroupPhase {
+                doc
+                /* Phase 3 전환(Transition) 조건:
+                 * 정기 오프라인 세미나 4회 이상 개최, 기업 스폰서 1곳 이상 확보 및 CSEP 보유 인원 10명 이상 달성
+                 */
+            }
         }
     } // package Lifecycle
 } // package ChapterBehavior
