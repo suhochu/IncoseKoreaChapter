@@ -112,12 +112,12 @@ package ChapterActivityLogs_2026_Q4 {
     // =========================================================================
     // 3. 워킹그룹별 SE 블랙박스 정의 및 운용시나리오(ConOps) 개발 과제 제출물 트래킹 슬롯
     // =========================================================================
+
+    // 아래는 Example 인스턴스들
     item automotiveWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment2_BlackBoxAndConOps;
         :>> workingGroupName = "Automotive SDV Working Group";
-        ref :>> submitters = (
-            ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모',
-        );
+        ref :>> submitters = (ChapterMembers::'추수호', ChapterMembers::'최성열',);
         :>> status = SubmissionStatusKind::inProgress;
 
         part :>> submittedModel : ReferenceModelArtifact {

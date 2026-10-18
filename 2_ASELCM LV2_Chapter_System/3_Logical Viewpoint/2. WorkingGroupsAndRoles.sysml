@@ -63,7 +63,7 @@ package WorkingGroupsAndRoles {
             }
             ref :>> participants = (ChapterMembers::'추수호', ChapterMembers::'최성열',);
         }
-        part IT : WorkingGroup {
+        part spaceWG : WorkingGroup {
             :>> wgName = "Space Mission System Working Group";
             :>> targetSystemScope = "단일 SW가 아닌 궤도 수송 임무 시스템(Mission System) 전체";
             :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/2_Space_Mission_System_WG";
@@ -75,7 +75,7 @@ package WorkingGroupsAndRoles {
                 ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
             );
         }
-        part spaceWG : WorkingGroup {
+        part itSwWG : WorkingGroup {
             :>> wgName = "IT & SW System Working Group";
             :>> targetSystemScope = "단일 SW가 아닌 IT 및 SW 시스템 전체";
             :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/3_IT_and_SW_System_WG";
@@ -88,7 +88,7 @@ package WorkingGroupsAndRoles {
                 ChapterMembers::'구정모',
             );
         }
-        part Semiconductor : WorkingGroup {
+        part semiconductorWG : WorkingGroup {
             :>> wgName = "Semiconductor Related System Working Group";
             :>> targetSystemScope = "단일 SW가 아닌 반도체 관련 시스템 전체";
             :>> targetLV1Folder =

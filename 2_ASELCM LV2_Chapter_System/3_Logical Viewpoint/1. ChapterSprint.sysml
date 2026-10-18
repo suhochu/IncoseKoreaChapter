@@ -3,7 +3,6 @@ package ChapterSprint {
     private import Time::*;
     private import ChapterBehavior::ConOps::*;
     private import SystemContext::*;
-    private import INCOSE_Korea_Chapter_Governance::QualityAssurance::*;
     private import ScalarValues::*;
 
     // =========================================================================
@@ -86,5 +85,9 @@ package ChapterSprint {
         attribute passGate4_ODDThreeGroups : Boolean default false; // 장소 그룹(공칭/복합/극한) 추상화 여부
         attribute passGate5_ThreeExternalScopes : Boolean default false; // 조직/물리/자연 각 2개 이상 및 외란 아이템화 여부
         attribute passGate6_NoIsolatedActor : Boolean default false; // 모든 외부 액터의 시나리오 최소 1회 등장 여부
+
+        constraint gateCheck
+            : INCOSE_Korea_Chapter_Governance::QualityAssurance
+                    ::ReferenceModelAssignmentApprovalGate;
     }
 } // package ChapterSprint

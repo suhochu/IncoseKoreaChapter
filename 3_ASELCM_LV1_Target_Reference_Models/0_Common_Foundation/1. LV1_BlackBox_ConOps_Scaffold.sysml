@@ -202,7 +202,9 @@ package LV1_BlackBox_ConOps_Scaffold {
              * 각 2개 이상의 3대 외부 환경 액터(Gate 5)를 통합하는 컨텍스트 템플릿.
              */
             // [Gate 3] 운용 시점의 인프라·법규·외란 전제 조건 강제
-            assert constraint timeframeAssumption : BaseTimeframeInfrastructureAssumption;
+            requirement timefrqme {
+                assume constraint timeframeAssumption : BaseTimeframeInfrastructureAssumption;
+            }
 
             // [Gate 4] 3개 대표 장소 그룹(Group A, B, C) 포함
             part oddGroupA : OperationalLocationGroup {
@@ -366,6 +368,7 @@ package LV1_BlackBox_ConOps_Scaffold {
         part def DomainBlackBoxSoI :> BaseBlackBoxSoI {
             :>> soiName =
                 "<하위 부품이 아닌 독립 임무 완결형 최상위 대상시스템(Whole-System) 명칭>";
+            satisfy requirement : DomainMissionObjective;
         }
 
         part def DomainOperationalContext :> BaseBlackBoxOperationalContext {

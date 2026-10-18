@@ -7,7 +7,6 @@ package ChapterBehavior {
     private import ScalarValues::*;
     private import SystemContext::*;
     private import ActorAndInterfaces::*;
-    private import INCOSE_Korea_Chapter_Governance::QualityAssurance::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)

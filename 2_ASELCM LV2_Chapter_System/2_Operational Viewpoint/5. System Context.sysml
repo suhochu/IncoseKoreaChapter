@@ -109,6 +109,7 @@ package SystemContext {
 
         // Phase 2 -> Phase 3 전환 조건 수식 바인딩
         constraint phase2To3GateCheck : ChapterMetricsAndGuards::Phase2ToPhase3GateConstraint {
+            in presentations = accumulatedPresentationsCount;
             in activeMembers = regularActiveMembersCount;
             in sepMembers = sepCertifiedMembersCount;
             in aiSkills = developedAISkillsCount;
@@ -154,7 +155,18 @@ package SystemContext {
         /* 10월 킥오프 baseline 기준 System Context 인스턴스.
          * 3개는 활성 연결(Phase 1), 2개는 인스턴스 미생성 보류 상태(Phase 2).
          */
-        part chapter : ChapterInContext;
+        part chapter : ChapterInContext {
+            doc
+            /* [SysideViews::TableView 호환성 개선]
+             * ChapterCoreMoEsTableView에서 ColumnType::attributeValue를 통해 현재 실측값을
+             * 바로 표시하고 UI에서 편집할 수 있도록 5대 핵심 MoE 속성을 명시적으로 재정의(:>>)함.
+             */
+            attribute :>> accumulatedPresentationsCount = 1;
+            attribute :>> completedReferenceModelsCount = 0;
+            attribute :>> developedAISkillsCount = 0;
+            attribute :>> regularActiveMembersCount = 12;
+            attribute :>> sepCertifiedMembersCount = 1;
+        }
 
         part cameoVendor : ContextToolVendor;
         part incoseSector : ContextINCOSESector;

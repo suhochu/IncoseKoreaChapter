@@ -283,9 +283,11 @@ package INCOSE_Korea_Chapter_Governance {
              * LV1 참조모델 승인 누적 건수 및 세미나 발표 건수 등 정량적 지표를 기반으로
              * System 2(KoreaChapter)의 Lifecycle Phase 전환 가능 여부를 판정함.
              */
-            attribute approvedReferenceModelCount : Integer;
-            attribute accumulatedSeminarArtifactCount : Integer;
-            attribute activeMemberAttendanceCount : Integer;
+            in presentations : Integer;
+            in refModels : Integer;
+            in aiSkills : Integer;
+            in activeMembers : Integer;
+            in sepMembers : Integer;
         }
     } // package QualityAssurance
 

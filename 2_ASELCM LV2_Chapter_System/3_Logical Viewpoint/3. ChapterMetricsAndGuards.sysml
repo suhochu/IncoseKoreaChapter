@@ -56,11 +56,10 @@ package ChapterMetricsAndGuards {
          * 3) MagicGrid 전 단계(5단계) AI Architecting Skills 5개 이상 완비
          * 4) 도메인별 참조모델 3건 이상 유지 및 고도화
          */
-        in activeMembers : Integer;
-        in sepMembers : Integer;
-        in aiSkills : Integer;
-        in refModels : Integer;
 
-        activeMembers >= 30 and sepMembers >= 10 and aiSkills >= 5 and refModels >= 3
+        (presentations >= 10 or activeMembers > 15) and
+        refModels >= 3 and
+        aiSkills >= 3 and
+        sepMembers >= 3
     }
 } // package ChapterMetricsAndGuards
