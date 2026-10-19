@@ -6,7 +6,7 @@ package ChapterMetricsAndGuards {
      */
 
     private import ScalarValues::*;
-    private import INCOSE_Korea_Chapter_Governance::QualityAssurance::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // =========================================================================
     // 1. 5대 핵심 성과 지표 홀더 (Core 5 MoEs Holder)

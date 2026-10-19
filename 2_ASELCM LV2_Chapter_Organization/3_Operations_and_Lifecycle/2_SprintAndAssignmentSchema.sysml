@@ -86,8 +86,6 @@ package ChapterSprint {
         attribute passGate5_ThreeExternalScopes : Boolean default false; // 조직/물리/자연 각 2개 이상 및 외란 아이템화 여부
         attribute passGate6_NoIsolatedActor : Boolean default false; // 모든 외부 액터의 시나리오 최소 1회 등장 여부
 
-        constraint gateCheck
-            : INCOSE_Korea_Chapter_Governance::QualityAssurance
-                    ::ReferenceModelAssignmentApprovalGate;
+        constraint gateCheck : QualityGatesAndReviewProcess::ReferenceModelAssignmentApprovalGate;
     }
 } // package ChapterSprint
