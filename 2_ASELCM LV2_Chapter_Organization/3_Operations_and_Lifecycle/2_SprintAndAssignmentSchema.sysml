@@ -1,8 +1,8 @@
 package ChapterSprint {
-    private import ChapterMembers::*;
+    private import StakeholderDefinitions::*;
     private import Time::*;
-    private import ChapterBehavior::ConOps::*;
-    private import SystemContext::*;
+    private import ChapterConOpsAndLifecycle::ConOps::*;
+    private import ChapterSystemContext::*;
     private import ScalarValues::*;
 
     // =========================================================================

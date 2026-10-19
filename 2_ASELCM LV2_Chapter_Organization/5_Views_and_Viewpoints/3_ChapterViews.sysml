@@ -1,5 +1,5 @@
-package Views {
-    private import Viewpoints::*; // [개선] 중복 import 제거
+package ChapterViews {
+    private import ChapterViewpoints::*; // [개선] 중복 import 제거
     private import SysideViews::*;
     private import SysideViews::TableViewDefinitions::*;
     private import SysideViews::MatrixViewDefinitions::*;
@@ -14,15 +14,15 @@ package Views {
          * 워킹그룹 조직 및 수명주기(Lifecycle & 5대 MoE 게이트) 노출
          */
         satisfy 'administrative operations viewpoint';
-        expose SystemContext::KnowledgeRepository;
-        expose SystemContext::ReferenceModelArtifact;
-        expose SystemContext::OperationalConstraintCheck;
-        expose ChapterBehavior::ConOps::*;
-        expose ChapterBehavior::Lifecycle::*;
+        expose ChapterSystemContext::KnowledgeRepository;
+        expose ChapterSystemContext::ReferenceModelArtifact;
+        expose ChapterSystemContext::OperationalConstraintCheck;
+        expose ChapterConOpsAndLifecycle::ConOps::*;
+        expose ChapterConOpsAndLifecycle::Lifecycle::*;
         expose ChapterSprint::*;
         expose WorkingGroupsAndRoles::*;
         expose ChapterMetricsAndGuards::*;
-        expose ChapterActivityLogs_2026_Q4::*;
+        expose ActivityLogs_2026_Q4::*;
     }
 
     view MemberValueView {
@@ -31,9 +31,9 @@ package Views {
          * 회원 속성(도메인, 관심사, 제공 자원), 회원별 가치 요구사항(Needs) 및 기업 보안 규칙(SecurityRules) 노출
          */
         satisfy 'member value viewpoint';
-        expose ChapterMembers::*;
-        expose StakeholdersNeeds::ChapterMembers_Needs::*;
-        expose StakeholdersNeeds::SecurityRules::*;
+        expose ChapterMembersDirectory::*;
+        expose MemberNeedsAndSecurityRules::ChapterMembers_Needs::*;
+        expose MemberNeedsAndSecurityRules::SecurityRules::*;
     }
 
     view IncoseAlignmentView {
@@ -42,12 +42,12 @@ package Views {
          * 외부 액터 중 INCOSESector, TechnicalOperations, ToolVendor와의 인터페이스 및 교환 아이템 노출
          */
         satisfy 'incose alignment viewpoint';
-        expose ActorAndInterfaces::ContextToolVendor;
-        expose ActorAndInterfaces::ContextINCOSESector;
-        expose ActorAndInterfaces::ContextTechnicalOperations;
-        expose ActorAndInterfaces::ToolLicenseInfoItem;
-        expose ActorAndInterfaces::SectorActivityReportItem;
-        expose ActorAndInterfaces::HandbookResourceItem;
+        expose ExternalActorsAndInterfaces::ContextToolVendor;
+        expose ExternalActorsAndInterfaces::ContextINCOSESector;
+        expose ExternalActorsAndInterfaces::ContextTechnicalOperations;
+        expose ExternalActorsAndInterfaces::ToolLicenseInfoItem;
+        expose ExternalActorsAndInterfaces::SectorActivityReportItem;
+        expose ExternalActorsAndInterfaces::HandbookResourceItem;
     }
 
     view PeerSocietyConnectionView {
@@ -56,13 +56,13 @@ package Views {
          * KOSSE, KCOSE 등 외부 학회 액터와의 인터페이스 및 챕터 고유 역량(ChapterCapability) 노출
          */
         satisfy 'peer society connection viewpoint';
-        expose ActorAndInterfaces::ContextPeerSocietyOrganization;
-        expose ActorAndInterfaces::PeerBenchmarkItem;
-        expose Stakeholders::PeerSociety;
-        expose SystemContext::ChapterCapability;
-        expose SystemContext::ChapterInContext::globalStandardFastAdoption;
-        expose SystemContext::ChapterInContext::handsOnToolPractice;
-        expose SystemContext::ChapterInContext::domainReferenceModelCreation;
+        expose ExternalActorsAndInterfaces::ContextPeerSocietyOrganization;
+        expose ExternalActorsAndInterfaces::PeerBenchmarkItem;
+        expose StakeholderDefinitions::PeerSociety;
+        expose ChapterSystemContext::ChapterCapability;
+        expose ChapterSystemContext::ChapterInContext::globalStandardFastAdoption;
+        expose ChapterSystemContext::ChapterInContext::handsOnToolPractice;
+        expose ChapterSystemContext::ChapterInContext::domainReferenceModelCreation;
     }
 
     // =========================================================================
@@ -75,7 +75,7 @@ package Views {
         /* ValueRationaleValidationConcern 대응 테이블 뷰 */
         satisfy 'member value viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
-        expose StakeholdersNeeds::ChapterMembers_Needs::*;
+        expose MemberNeedsAndSecurityRules::ChapterMembers_Needs::*;
 
         view col_id :>> columnViews {
             attribute :>> featureToRender = ColumnType::declaredName;
@@ -113,7 +113,7 @@ package Views {
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
-        expose SystemContext::incoseKoreaChapterContext::chapter;
+        expose ChapterSystemContext::incoseKoreaChapterContext::chapter;
 
         view col_name :>> columnViews {
             attribute :>> featureToRender = ColumnType::declaredName;
@@ -157,7 +157,7 @@ package Views {
         /* 워킹그룹별 과제 제출 상태 및 교수님 피드백·6대 Gate 통과 여부 모니터링 테이블 뷰 */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
-        expose ChapterActivityLogs_2026_Q4::*;
+        expose ActivityLogs_2026_Q4::*;
 
         view col_submissionId :>> columnViews {
             attribute :>> featureToRender = ColumnType::declaredName;
@@ -176,4 +176,4 @@ package Views {
             attribute :>> columnWidth = 150;
         }
     }
-} // package Views
+} // package ChapterViews

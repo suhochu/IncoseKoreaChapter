@@ -1,4 +1,4 @@
-package Viewpoints {
+package ChapterViewpoints {
     private import StakeholdersConcerns::*;
 
     viewpoint 'administrative operations viewpoint' {
@@ -57,4 +57,4 @@ package Viewpoints {
              */
         }
     }
-} // package Viewpoints
+} // package ChapterViewpoints

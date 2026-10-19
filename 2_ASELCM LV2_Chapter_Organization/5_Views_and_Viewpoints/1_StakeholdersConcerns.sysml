@@ -19,9 +19,9 @@ package StakeholdersConcerns {
      */
 
     // 앞서 통합한 Comprehensive 패키지 요소들을 import
-    private import Stakeholders::*;
-    private import ActorAndInterfaces::*;
-    private import SystemContext::*;
+    private import StakeholderDefinitions::*;
+    private import ExternalActorsAndInterfaces::*;
+    private import ChapterSystemContext::*;
 
     concern def KoreanChapterConcern;
 

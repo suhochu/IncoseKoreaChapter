@@ -1,12 +1,12 @@
-package ChapterBehavior {
+package ChapterConOpsAndLifecycle {
     doc
     /* Chapter Behavior — 통합된 시스템 경계 및 인터페이스 모델을 바탕으로
      * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
      */
 
     private import ScalarValues::*;
-    private import SystemContext::*;
-    private import ActorAndInterfaces::*;
+    private import ChapterSystemContext::*;
+    private import ExternalActorsAndInterfaces::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)
@@ -160,4 +160,4 @@ package ChapterBehavior {
             }
         }
     } // package Lifecycle
-} // package ChapterBehavior
+} // package ChapterConOpsAndLifecycle

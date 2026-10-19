@@ -1,9 +1,9 @@
-package ChapterActivityLogs_2026_Q4 {
+package ActivityLogs_2026_Q4 {
     private import ScalarValues::*;
     private import Time::*;
-    private import ChapterMembers::*;
-    private import SystemContext::*;
-    private import ChapterBehavior::ConOps::*;
+    private import ChapterMembersDirectory::*;
+    private import ChapterSystemContext::*;
+    private import ChapterConOpsAndLifecycle::ConOps::*;
     private import ChapterSprint::*;
 
     // =========================================================================
@@ -26,8 +26,9 @@ package ChapterActivityLogs_2026_Q4 {
 
         // 문자열이 아니라 ChapterMembers에 정의된 실제 회원 Part들을 참조!
         ref :>> attendees = (
-            ChapterMembers::'이중윤', ChapterMembers::'서은석', ChapterMembers::'추수호',
-            ChapterMembers::'최성열', ChapterMembers::'이수', ChapterMembers::'박홍석',
+            ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'서은석',
+            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+            ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박홍석',
         );
 
         :>> keyDecisions = (
@@ -47,15 +48,15 @@ package ChapterActivityLogs_2026_Q4 {
 
         // 후속 액션 아이템 인스턴스
         action ai1_setupChannels : ActionItemTask {
-            ref :>> owner = ChapterMembers::'추수호';
+            ref :>> owner = ChapterMembersDirectory::'추수호';
             :>> taskDescription =
                 "카카오톡 단체방 개설 및 미참석 3명 동의 후 초대, 구글 워크스페이스 및 GitHub 세팅";
             :>> dueDate = "Immediate";
         }
         action ai2_selectTargetSoI : ActionItemTask {
             ref :>> owner = (
-                ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'이수',
-                ChapterMembers::'박홍석',
+                ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박홍석',
             );
             :>> taskDescription =
                 "각자 모델링할 대상 시스템(Engineering Question & SoI) 선정 및 1차 웹 미팅 발표 준비";
@@ -81,9 +82,10 @@ package ChapterActivityLogs_2026_Q4 {
         :>> scaffoldPackageName = "LV1_BlackBox_ConOps_Scaffold";
 
         ref :>> owner = (
-            ChapterMembers::'추수호', ChapterMembers::'최성열', ChapterMembers::'구정모',
-            ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
-            ChapterMembers::'박홍석',
+            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+            ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'이수',
+            ChapterMembersDirectory::'박승훈', ChapterMembersDirectory::'김다운',
+            ChapterMembersDirectory::'박홍석',
         );
         :>> taskDescription =
             "LV1_BlackBox_ConOps_Scaffold를 상속받아 워킹그룹별 대상시스템(SoI)의 임무/MOE, 운용시점 인프라 가정, 3대 외부환경 컨텍스트 및 5-Tuple 블랙박스 ConOps 시나리오 작성";
@@ -98,7 +100,9 @@ package ChapterActivityLogs_2026_Q4 {
 
         // 교수님 피드백 정식 레코드
         part profFeedback_202610 : AdvisoryFeedback :> advisoryFeedbacks {
-            ref :>> reviewers = (ChapterMembers::'이중윤', ChapterMembers::'서은석',);
+            ref :>> reviewers = (
+                ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'서은석',
+            );
             :>> feedbackDate = "2026-10";
             :>> feedbackPoints = (
                 "1. 운용 개념은 대상시스템의 존재목적(임무 또는 사업목표)을 달성하는 모습을 표현해야 함.",
@@ -117,7 +121,9 @@ package ChapterActivityLogs_2026_Q4 {
     item automotiveWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment2_BlackBoxAndConOps;
         :>> workingGroupName = "Automotive SDV Working Group";
-        ref :>> submitters = (ChapterMembers::'추수호', ChapterMembers::'최성열',);
+        ref :>> submitters = (
+            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+        );
         :>> status = SubmissionStatusKind::inProgress;
 
         part :>> submittedModel : ReferenceModelArtifact {
@@ -137,7 +143,8 @@ package ChapterActivityLogs_2026_Q4 {
         ref :>> targetAssignment = assignment2_BlackBoxAndConOps;
         :>> workingGroupName = "Space Mission System Working Group";
         ref :>> submitters = (
-            ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
+            ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
+            ChapterMembersDirectory::'김다운',
         );
         :>> status = SubmissionStatusKind::inProgress;
 
@@ -153,4 +160,4 @@ package ChapterActivityLogs_2026_Q4 {
             :>> isGateApproved = false;
         }
     }
-} // package ChapterActivityLogs_2026_Q4
+} // package ActivityLogs_2026_Q4

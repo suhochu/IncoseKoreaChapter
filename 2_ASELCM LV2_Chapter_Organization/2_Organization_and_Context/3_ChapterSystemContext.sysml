@@ -1,6 +1,6 @@
-package SystemContext {
-    private import Stakeholders::*;
-    private import ActorAndInterfaces::*;
+package ChapterSystemContext {
+    private import StakeholderDefinitions::*;
+    private import ExternalActorsAndInterfaces::*;
     private import ScalarValues::*;
 
     // ---- 3.1 조직 제약사항 (Constraints) ----
@@ -183,4 +183,4 @@ package SystemContext {
         // connect chapter.sponsorInterface to sponsor.sponsorInterfaceOut;
         // connect chapter.peerInterface to peerSociety.peerOrgInterfaceOut;
     }
-} // package SystemContext
+} // package ChapterSystemContext

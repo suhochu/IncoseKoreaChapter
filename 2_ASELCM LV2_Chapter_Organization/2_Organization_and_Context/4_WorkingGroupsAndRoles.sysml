@@ -1,8 +1,8 @@
 package WorkingGroupsAndRoles {
     private import ScalarValues::*;
-    private import Stakeholders::*;
-    private import ChapterMembers::*;
-    private import SystemContext::*;
+    private import StakeholderDefinitions::*;
+    private import ChapterMembersDirectory::*;
+    private import ChapterSystemContext::*;
     private import ChapterSprint::*;
 
     part def ChapterRole {
@@ -26,7 +26,7 @@ package WorkingGroupsAndRoles {
     part def ChapterLogicalOrganization {
         part representative : ChapterRole {
             :>> roleTitle = "Chapter Representative (챕터 대표)";
-            ref :>> assignee = ChapterMembers::'이중윤';
+            ref :>> assignee = ChapterMembersDirectory::'이중윤';
             :>> responsibilities = (
                 "챕터 비전(Do-Tank) 수립 및 운영 총괄",
                 "국내외 SE 학회(KOSSE/KCOSE) 및 INCOSE 본부/섹터 대외 협력 대표",
@@ -35,7 +35,7 @@ package WorkingGroupsAndRoles {
 
         part secretary : ChapterRole {
             :>> roleTitle = "General Secretary (총무 및 운영 담당)";
-            ref :>> assignee = ChapterMembers::'추수호';
+            ref :>> assignee = ChapterMembersDirectory::'추수호';
             :>> responsibilities = (
                 "격주 웹 스프린트 및 분기 오프라인 모임 운영",
                 "Google Workspace 및 GitHub 저장소(KnowledgeRepository) 형상 관리 및 보안 점검 승인",
@@ -45,7 +45,9 @@ package WorkingGroupsAndRoles {
 
         part academicAdvisors : ChapterRole {
             :>> roleTitle = "Academic Advisory Group (교수진 자문 및 리뷰)";
-            ref :>> assignee = (ChapterMembers::'이중윤', ChapterMembers::'서은석',);
+            ref :>> assignee = (
+                ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'서은석',
+            );
             :>> responsibilities = (
                 "SE 과제 실무 가이드 감수 및 방법론적 피드백(AdvisoryFeedback) 제공",
                 "LV1 참조모델의 임무/사업목표(What/Why), 정량적 MOE(목표값/한계값/단위), 블랙박스 상호작용 타당성 심사",
@@ -59,9 +61,11 @@ package WorkingGroupsAndRoles {
             :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/1_Automotive_SDV_WG";
             part :>> lead {
                 :>> roleTitle = "Automotive WG Lead";
-                ref :>> assignee = ChapterMembers::'추수호';
+                ref :>> assignee = ChapterMembersDirectory::'추수호';
             }
-            ref :>> participants = (ChapterMembers::'추수호', ChapterMembers::'최성열',);
+            ref :>> participants = (
+                ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+            );
         }
         part spaceWG : WorkingGroup {
             :>> wgName = "Space Mission System Working Group";
@@ -69,10 +73,11 @@ package WorkingGroupsAndRoles {
             :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/2_Space_Mission_System_WG";
             part :>> lead {
                 :>> roleTitle = "Space WG Lead";
-                ref :>> assignee = ChapterMembers::'이수';
+                ref :>> assignee = ChapterMembersDirectory::'이수';
             }
             ref :>> participants = (
-                ChapterMembers::'이수', ChapterMembers::'박승훈', ChapterMembers::'김다운',
+                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
+                ChapterMembersDirectory::'김다운',
             );
         }
         part itSwWG : WorkingGroup {
@@ -81,11 +86,11 @@ package WorkingGroupsAndRoles {
             :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/3_IT_and_SW_System_WG";
             part :>> lead {
                 :>> roleTitle = "IT WG Lead";
-                ref :>> assignee = ChapterMembers::'박홍석';
+                ref :>> assignee = ChapterMembersDirectory::'박홍석';
             }
             ref :>> participants = (
-                ChapterMembers::'심정환', ChapterMembers::'박홍석', ChapterMembers::'최지원',
-                ChapterMembers::'구정모',
+                ChapterMembersDirectory::'심정환', ChapterMembersDirectory::'박홍석',
+                ChapterMembersDirectory::'최지원', ChapterMembersDirectory::'구정모',
             );
         }
         part semiconductorWG : WorkingGroup {
@@ -95,9 +100,9 @@ package WorkingGroupsAndRoles {
                 "3_ASELCM_LV1_Target_Reference_Models/4_Semiconductor_Related_System_WG";
             part :>> lead {
                 :>> roleTitle = "Semiconductor WG Lead";
-                ref :>> assignee = ChapterMembers::'김희재';
+                ref :>> assignee = ChapterMembersDirectory::'김희재';
             }
-            ref :>> participants = ChapterMembers::'김희재';
+            ref :>> participants = ChapterMembersDirectory::'김희재';
         }
     }
 } // package WorkingGroupsAndRoles

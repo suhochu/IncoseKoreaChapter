@@ -1,4 +1,4 @@
-package IncoseKoreaChapter_Objectives {
+package ChapterObjectives {
     doc
     /* [목표(Goal) 뷰포인트]
      * INCOSE Korea Chapter 프로젝트가 존재하는 근본적인 이유를 정의한다.
@@ -46,4 +46,4 @@ package IncoseKoreaChapter_Objectives {
          * 3. 완성된 이 '모범 사례(Best Practice)'를 통해 리더십과 경영진을 설득하고, 성공 사례를 직접 경험한 실무진들이 주변으로 지식을 전파하는 상향식(Bottom-up) 확산을 통해 대한민국이 시스템 엔지니어링 분야의 패스트 무버(Fast Mover)로 도약하는 핵심 엔진 역할을 수행한다.
          */
     }
-} // package IncoseKoreaChapter_Objectives
+} // package ChapterObjectives

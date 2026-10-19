@@ -8,7 +8,7 @@ package INCOSE_Korea_Chapter_Governance {
      */
 
     private import ScalarValues::*;
-    private import SystemContext::*;
+    private import ChapterSystemContext::*;
     private import LV1_BlackBox_ConOps_Scaffold::*;
 
     // ==========================================
