@@ -13,12 +13,12 @@ package WorkingGroupsAndRoles {
 
     part def WorkingGroup {
         attribute wgName : String;
-        attribute targetSystemScope : String; // 예: "SDV 전체 비히클", "궤도 수송 임무 시스템 전체"
-        attribute targetLV1Folder : String; // [추가] 3_ASELCM_LV1_Target_Reference_Models 내 담당 폴더 경로
+        attribute targetSystemScope : String;
+        attribute targetRepoDomainFolder : String; // '6. Projects/1. Domains' 하위 폴더 경로
+        attribute targetSysmlPackagePath : String; // SysML v2 모델 내 LV1 패키지 경로
         part lead : ChapterRole;
         ref participants : IncoseKoreaChapterMember [1..*];
 
-        // 워킹그룹이 수행 중인 과제 제출물 및 보유 참조모델 아티팩트 연결
         ref activeSubmissions : AssignmentSubmission [0..*];
         ref managedReferenceModels : ReferenceModelArtifact [0..*];
     }
@@ -43,49 +43,48 @@ package WorkingGroupsAndRoles {
             );
         }
 
-        part academicAdvisors : ChapterRole {
-            :>> roleTitle = "Academic Advisory Group (교수진 자문 및 리뷰)";
-            ref :>> assignee = (
-                ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'서은석',
-            );
-            :>> responsibilities = (
-                "SE 과제 실무 가이드 감수 및 방법론적 피드백(AdvisoryFeedback) 제공",
-                "LV1 참조모델의 임무/사업목표(What/Why), 정량적 MOE(목표값/한계값/단위), 블랙박스 상호작용 타당성 심사",
-                "LV3 ReferenceModelAssignmentApprovalGate 최종 학술 승인",
+        // [1. Aerospace WG]
+        part aerospaceWG : WorkingGroup {
+            :>> wgName = "1. Aerospace Working Group";
+            :>> targetSystemScope =
+                "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 3대 임무 체계 전체)";
+            :>> targetRepoDomainFolder = "6. Projects/1. Domains/1. Aerospace";
+            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/1_Aerospace_WG";
+            part :>> lead {
+                :>> roleTitle = "Aerospace WG Lead";
+                ref :>> assignee = ChapterMembersDirectory::'이수';
+            }
+            ref :>> participants = (
+                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
+                ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박홍석',
             );
         }
 
+        // [2. Automotive WG]
         part automotiveWG : WorkingGroup {
-            :>> wgName = "Automotive SDV Working Group";
-            :>> targetSystemScope = "부품 단위가 아닌 SDV 및 섀시를 포함한 Vehicle 전체 수준";
-            :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/1_Automotive_SDV_WG";
+            :>> wgName = "2. Automotive Working Group";
+            :>> targetSystemScope =
+                "2035 소프트웨어 중심 자동차(SDV) 및 섀시를 포함한 Vehicle 전체 시스템";
+            :>> targetRepoDomainFolder = "6. Projects/1. Domains/2. Automotive";
+            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/2_Automotive_WG";
             part :>> lead {
                 :>> roleTitle = "Automotive WG Lead";
                 ref :>> assignee = ChapterMembersDirectory::'추수호';
             }
             ref :>> participants = (
                 ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
+                ChapterMembersDirectory::'이의범',
             );
         }
-        part spaceWG : WorkingGroup {
-            :>> wgName = "Space Mission System Working Group";
-            :>> targetSystemScope = "단일 SW가 아닌 궤도 수송 임무 시스템(Mission System) 전체";
-            :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/2_Space_Mission_System_WG";
-            part :>> lead {
-                :>> roleTitle = "Space WG Lead";
-                ref :>> assignee = ChapterMembersDirectory::'이수';
-            }
-            ref :>> participants = (
-                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
-                ChapterMembersDirectory::'김다운',
-            );
-        }
+
+        // [3. IT 폴더 매핑]
         part itSwWG : WorkingGroup {
-            :>> wgName = "IT & SW System Working Group";
-            :>> targetSystemScope = "단일 SW가 아닌 IT 및 SW 시스템 전체";
-            :>> targetLV1Folder = "3_ASELCM_LV1_Target_Reference_Models/3_IT_and_SW_System_WG";
+            :>> wgName = "3. IT & Robotics Working Group";
+            :>> targetSystemScope = "2035 재난 탐색 및 구조 지원 로봇 시스템 전체";
+            :>> targetRepoDomainFolder = "6. Projects/1. Domains/3. IT";
+            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/3_IT_WG";
             part :>> lead {
-                :>> roleTitle = "IT WG Lead";
+                :>> roleTitle = "IT & Robotics WG Lead";
                 ref :>> assignee = ChapterMembersDirectory::'박홍석';
             }
             ref :>> participants = (
@@ -93,11 +92,14 @@ package WorkingGroupsAndRoles {
                 ChapterMembersDirectory::'최지원', ChapterMembersDirectory::'구정모',
             );
         }
+
+        // [4. Semiconductor 폴더 매핑]
         part semiconductorWG : WorkingGroup {
-            :>> wgName = "Semiconductor Related System Working Group";
-            :>> targetSystemScope = "단일 SW가 아닌 반도체 관련 시스템 전체";
-            :>> targetLV1Folder =
-                "3_ASELCM_LV1_Target_Reference_Models/4_Semiconductor_Related_System_WG";
+            :>> wgName = "4. Semiconductor Working Group";
+            :>> targetSystemScope =
+                "2035 EUV 제니스 반도체 장비 시스템 (Level 0 리소그래피/타 공정 컨텍스트 및 Fab 베리에이션 포함)";
+            :>> targetRepoDomainFolder = "6. Projects/1. Domains/4. Semiconductor";
+            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/4_Semiconductor_WG";
             part :>> lead {
                 :>> roleTitle = "Semiconductor WG Lead";
                 ref :>> assignee = ChapterMembersDirectory::'김희재';

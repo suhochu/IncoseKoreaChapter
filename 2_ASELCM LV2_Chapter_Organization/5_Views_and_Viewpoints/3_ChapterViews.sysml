@@ -16,13 +16,16 @@ package ChapterViews {
         satisfy 'administrative operations viewpoint';
         expose ChapterSystemContext::KnowledgeRepository;
         expose ChapterSystemContext::ReferenceModelArtifact;
+        expose ChapterSystemContext::AISkillArtifact;
         expose ChapterSystemContext::OperationalConstraintCheck;
         expose ChapterConOpsAndLifecycle::ConOps::*;
         expose ChapterConOpsAndLifecycle::Lifecycle::*;
         expose ChapterSprint::*;
         expose WorkingGroupsAndRoles::*;
         expose ChapterMetricsAndGuards::*;
-        expose ActivityLogs_2026_Q4::*;
+        expose SprintMeetings_2026_Q4::*;
+        expose ModelingAssignments_and_Feedbacks::*;
+        expose WG_Submissions_Tracker::*;
     }
 
     view MemberValueView {
@@ -154,10 +157,12 @@ package ChapterViews {
     // (3) KnowledgeAssetConcern 대응: 워킹그룹별 과제 제출물 및 게이트 통과 현황 테이블 뷰
     view AssignmentSubmissionStatusTableView : TableView {
         doc
-        /* 워킹그룹별 과제 제출 상태 및 교수님 피드백·6대 Gate 통과 여부 모니터링 테이블 뷰 */
+        /* WG_Submissions_Tracker 패키지만 단독으로 expose하여
+         * 1. Aerospace, 2. Automotive, 3. IT, 4. Semiconductor 4개 행만 정확히 테이블에 표시함.
+         */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
-        expose ActivityLogs_2026_Q4::*;
+        expose WG_Submissions_Tracker::*;
 
         view col_submissionId :>> columnViews {
             attribute :>> featureToRender = ColumnType::declaredName;
@@ -167,7 +172,7 @@ package ChapterViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
                 attributeName = "workingGroupName";
             }
-            attribute :>> columnWidth = 220;
+            attribute :>> columnWidth = 240;
         }
         view col_status :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {

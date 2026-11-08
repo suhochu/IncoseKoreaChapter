@@ -22,16 +22,28 @@ package ChapterSystemContext {
         slackOrDiscord;
         googleWorkspace;
         github;
+        seLabsAI;
         other;
     }
     enum def ArtifactCategoryKind {
         translatedArticle;
         sysmlDiagram;
-        meetingMinutes;
-        requirementRecord;
-        referenceModelCode; // 3_ASELCM_LV1_Target_Reference_Models 참조모델 코드
-        assignmentGuide; // SE 과제 수행 실무 가이드 문서
-        advisoryFeedbackRecord; // 학술자문단(교수진) 모델 리뷰 및 피드백 기록
+        meetingMinutes; // 1. Meeting
+        memberSurveyRecord; // 2. Member Info
+        memoryArchiveRecord; // 3. Memory Archive
+        toolGuideAndConfig; // 4. Tools
+        methodologyReference; // 5. Architecture Methodologies & 7. Source
+        referenceModelCode; // 6. Projects/1. Domains (Aerospace, Automotive, IT, Semiconductor)
+        assignmentGuide; // 6. Projects/2. references
+        aiSkillPromptAndWorkflow; // 6. Projects/3. AI Skills
+        advisoryFeedbackRecord;
+    }
+
+    // 실제 Google Drive / GitHub 폴더 구조를 표현하는 디렉터리 정의
+    part def DirectoryFolder {
+        attribute folderName : String;
+        attribute relativePath : String;
+        part subFolders : DirectoryFolder [0..*];
     }
 
     item def ChapterArtifact {
@@ -39,6 +51,8 @@ package ChapterSystemContext {
         attribute category : ArtifactCategoryKind;
         attribute owner : String;
         attribute locationURL : String;
+        attribute repoFolderPath : String default
+            "https://drive.google.com/drive/folders/1ADjJ6gtuJFFFTdRC_r0cKX_8uqG5X47a?usp=drive_link";
     }
 
     // LV1 참조모델 과제 산출물 및 버전·보안·게이트 승인 상태를 관리하는 전용 아티팩트
@@ -60,16 +74,92 @@ package ChapterSystemContext {
         attribute isGateApproved : Boolean default false; // 교수님 피드백 3종 + 6대 Gate 통과 여부
     }
 
+    // [6. Projects/3. AI Skills] AI 아키텍팅 프롬프트 및 워크플로우 아티팩트 (MoE 3번과 직결)
+    item def AISkillArtifact :> ChapterArtifact {
+        doc
+        /* '6. Projects/3. AI Skills' 폴더에 축적되는 단계별 AI 프롬프트 및 자동화 스킬 자산.
+         * ChapterMoEsHolder의 developedAISkillsCount 지표 산출 근거가 됨.
+         */
+        :>> category = ArtifactCategoryKind::aiSkillPromptAndWorkflow;
+        :>> repoFolderPath = "6. Projects/3. AI Skills";
+
+        attribute targetSEPhase : String; // 예: "PESTEL-CTIMMRA 분석", "DoDAF OV-1/OV-5b 생성", "SysML v2 변환"
+        attribute targetToolOrLLM : String [0..1]; // 예: "Gemini / Claude / SE-Labs AI"
+    }
+
     part def KnowledgeRepository {
         doc
         /* Single Source of Truth (Google Workspace & GitHub).
-         * 일반 문헌/회의록뿐만 아니라 검증을 통과한 LV1 참조모델 Baseline을 통합 관리함.
+         * 첨부된 실제 챕터 저장소의 7대 루트 폴더 및 하위 프로젝트/도메인 폴더 트리를 그대로 반영함.
          */
-        attribute platform : PlatformKind [1..*];
-        part artifact : ChapterArtifact [0..*];
+        attribute platform : PlatformKind [1..*] = (
+            PlatformKind::googleWorkspace, PlatformKind::github, PlatformKind::seLabsAI,
+        );
 
-        // 게이트 심사를 통과하여 정식 등록된 LV1 참조모델 목록 (Lifecycle 전환 평가 기준)
+        // ---- 실제 Repo 디렉터리 트리 구조화 ----
+        part folder1_Meeting : DirectoryFolder {
+            :>> folderName = "1. Meeting";
+            :>> relativePath = "1. Meeting";
+        }
+        part folder2_MemberInfo : DirectoryFolder {
+            :>> folderName = "2. Member Info";
+            :>> relativePath = "2. Member Info";
+        }
+        part folder3_MemoryArchive : DirectoryFolder {
+            :>> folderName = "3. Memory Archive";
+            :>> relativePath = "3. Memory Archive";
+        }
+        part folder4_Tools : DirectoryFolder {
+            :>> folderName = "4. Tools";
+            :>> relativePath = "4. Tools";
+        }
+        part folder5_ArchitectureMethodologies : DirectoryFolder {
+            :>> folderName = "5. Architecture Methodologies";
+            :>> relativePath = "5. Architecture Methodologies";
+        }
+        part folder6_Projects : DirectoryFolder {
+            :>> folderName = "6. Projects";
+            :>> relativePath = "6. Projects";
+
+            part sub1_Domains : DirectoryFolder :> subFolders {
+                :>> folderName = "1. Domains";
+                :>> relativePath = "6. Projects/1. Domains";
+
+                part dom1_Aerospace : DirectoryFolder :> subFolders {
+                    :>> folderName = "1. Aerospace";
+                    :>> relativePath = "6. Projects/1. Domains/1. Aerospace";
+                }
+                part dom2_Automotive : DirectoryFolder :> subFolders {
+                    :>> folderName = "2. Automotive";
+                    :>> relativePath = "6. Projects/1. Domains/2. Automotive";
+                }
+                part dom3_IT : DirectoryFolder :> subFolders {
+                    :>> folderName = "3. IT";
+                    :>> relativePath = "6. Projects/1. Domains/3. IT";
+                }
+                part dom4_Semiconductor : DirectoryFolder :> subFolders {
+                    :>> folderName = "4. Semiconductor";
+                    :>> relativePath = "6. Projects/1. Domains/4. Semiconductor";
+                }
+            }
+            part sub2_References : DirectoryFolder :> subFolders {
+                :>> folderName = "2. references";
+                :>> relativePath = "6. Projects/2. references";
+            }
+            part sub3_AISkills : DirectoryFolder :> subFolders {
+                :>> folderName = "3. AI Skills";
+                :>> relativePath = "6. Projects/3. AI Skills";
+            }
+        }
+        part folder7_Source : DirectoryFolder {
+            :>> folderName = "7. Source";
+            :>> relativePath = "7. Source";
+        }
+
+        // ---- 저장소 관리 아티팩트 컬렉션 ----
+        part artifact : ChapterArtifact [0..*];
         part approvedReferenceModels : ReferenceModelArtifact [0..*] :> artifact;
+        part registeredAISkills : AISkillArtifact [0..*] :> artifact;
     }
 
     // ---- 3.3 Chapter Capability (챕터 고유 역량) ----

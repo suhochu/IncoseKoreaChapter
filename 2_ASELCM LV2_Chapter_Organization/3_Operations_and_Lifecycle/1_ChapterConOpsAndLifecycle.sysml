@@ -19,6 +19,7 @@ package ChapterConOpsAndLifecycle {
             seminarStyle; // 세미나/특강형
             caseStudyStyle; // 케이스 스터디형
             handsOnLabStyle; // 프로젝트 실습형
+            onlineReviewStyle; // 온라인 진행상황 공유 및 산출물 검토형
             literatureReadingStyle; // 문헌 리딩형
         }
 

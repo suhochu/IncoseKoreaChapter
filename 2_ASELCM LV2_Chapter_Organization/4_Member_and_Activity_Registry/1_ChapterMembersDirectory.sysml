@@ -424,4 +424,12 @@ package ChapterMembersDirectory {
         );
         :>> expectation = "국내 학회 참여 경험이 없어 잘 모릅니다. 많이 배우고 싶습니다.";
     }
+
+    part '이의범' : IncoseKoreaChapterMember {
+        :>> name = "이의범";
+        :>> email = "tigerleb@gmail.com";
+        :>> affiliation = "현대모비스";
+        :>> position = "책임연구원 / 시스템 평가 엔지니어";
+        :>> phoneNumber = "010-5125-2884";
+    }
 } // package ChapterMembersDirectory

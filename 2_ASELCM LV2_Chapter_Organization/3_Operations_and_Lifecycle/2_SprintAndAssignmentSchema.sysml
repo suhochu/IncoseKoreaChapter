@@ -55,12 +55,13 @@ package ChapterSprint {
         /* 각 스프린트 주기에 부여되는 시스템 엔지니어링 모델링 과제 템플릿.
          * 실무 가이드 문서, 필수 반영 체크포인트, 그리고 교수님 피드백을 통합 관리함.
          */
-        attribute assignmentNo : Integer;
-        attribute stage : SEAssignmentStageKind;
+        attribute assignmentNo : Integer [1..*];
+        attribute stage : SEAssignmentStageKind [1..*];
         ref guideArtifact : ChapterArtifact [0..1]; // 참고 실무 가이드(PDF 등)
         attribute scaffoldPackageName : String [0..1]; // 상속해야 할 LV1 공통 스캐폴드 패키지명
         attribute mandatoryCheckpoints : String [1..*]; // 과제 통과 필수 요건 목록
         part advisoryFeedbacks : AdvisoryFeedback [0..*]; // 교수님 피드백 내역
+        attribute startDate : Iso8601DateTimeStructure;
     }
 
     // 워킹그룹/회원별 과제 제출물 및 품질 게이트 심사 결과 트래커
