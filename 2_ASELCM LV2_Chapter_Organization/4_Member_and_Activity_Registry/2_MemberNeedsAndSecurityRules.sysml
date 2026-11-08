@@ -17,7 +17,7 @@ package MemberNeedsAndSecurityRules {
         doc
         /* 회원들의 핵심 니즈와 가치 도출 근거를 담은 요구사항 세트 */
 
-        requirement def MemberNeedRequirement :> ChapterObjectives::ChapterSystemIdea {
+        requirement def MemberNeedRequirement :> ChapterObjectives::Objective {
             doc
             /* 구글 폼 문항7 "얻고 싶은 것 하나" 작성 템플릿을 옮기는 요구사항 정의.
              * GtWR(Guide to Writing Requirements) C1,C3,C5,C9 확인 대상.

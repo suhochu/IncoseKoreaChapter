@@ -127,16 +127,28 @@ package QualityGatesAndReviewProcess {
     constraint def ReferenceModelAssignmentApprovalGate {
         doc
         /* 워킹그룹이 제출한 LV1 모델이 KnowledgeRepository에 정식 Baseline으로 승격되기 위한 통합 품질 게이트 */
+        in passFb1 : Boolean;
+        in passFb2 : Boolean;
+        in passFb3 : Boolean;
+        in passG1 : Boolean;
+        in passG2 : Boolean;
+        in passG3 : Boolean;
+        in passG4 : Boolean;
+        in passG5 : Boolean;
+        in passG6 : Boolean;
+
         constraint fb1 : Feedback1_MissionAchievementConOpsRule;
         constraint fb2 : Feedback2_QuantitativeMOEStructureRule;
         constraint fb3 : Feedback3_BlackBoxAndTimeframeInfraRule;
 
-        constraint gate1 : Gate1_WholeSystemScopeRule;
-        constraint gate2 : Gate2_BlackBoxSolutionFreeRule;
-        constraint gate3 : Gate3_TimeframeAssumptionLinkRule;
-        constraint gate4 : Gate4_ODDSpatialGroupingRule;
+        constraint gate1 : Gate1_WholeSystemScopeRule { :>> isIndependentWholeSystem = passG1; }
+        constraint gate2 : Gate2_BlackBoxSolutionFreeRule { :>> hasZeroInternalComponentsExposed = passG2; }
+        constraint gate3 : Gate3_TimeframeAssumptionLinkRule { :>> hasFourCategoryTimeframeAssumptions = passG3; }
+        constraint gate4 : Gate4_ODDSpatialGroupingRule { :>> hasThreeTierODDGrouping = passG4; }
         constraint gate5 : Gate5_ThreeExternalScopesCompletenessRule;
         constraint gate6 : Gate6_NoIsolatedActorTraceabilityRule;
+
+        passFb1 and passFb2 and passFb3 and passG1 and passG2 and passG3 and passG4 and passG5 and passG6
     }
 
     // ---------------------------------------------------------------------

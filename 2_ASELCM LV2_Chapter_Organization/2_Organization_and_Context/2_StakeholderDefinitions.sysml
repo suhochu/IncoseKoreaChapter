@@ -35,34 +35,33 @@ package StakeholderDefinitions {
     port def NeedPort { out item needRequestOut : NeedRequestItem; }
     port def GivePort { out item giveResourceOut : GiveResourceItem; }
 
+    // ---- Enum 정의: 주요 산업 도메인 (패키지 레벨, 타 패키지 참조용) ----
+    enum def DomainKind {
+        defenseAndAerospace; // 방위산업 / 항공우주
+        automotiveAndMobility; // 모빌리티 / 자동차 / 자율주행
+        railInfrastructureAndEnergy; // 철도 / 인프라 / 플랜트
+        biomedicalAndHealthcare; // 의료기기 / 헬스케어
+        itAndSoftware; // IT / 소프트웨어 시스템
+        academiaAndResearch; // 학계 / 연구소
+        other; // 기타
+    }
+
+    // ---- Enum 정의: 거주 및 주요 활동 지역 (패키지 레벨, 타 패키지 참조용) ----
+    enum def RegionKind {
+        seoul; // 서울
+        gyeonggiIncheon; // 경기 / 인천
+        daejeonSejongChungcheong; // 대전 / 세종 / 충청
+        daeguGyeongbuk; // 대구 / 경북
+        busanUlsanGyeongnam; // 부산 / 울산 / 경남
+        gwangjuJeolla; // 광주 / 전라
+        gangwon; // 강원
+        jeju; // 제주
+        other; // 기타
+    }
+
     // ---- 이해관계자 (내부 구성요소) ----
     part def Member {
         // [설문1] 기본 인적 사항 및 소속
-
-        // ---- Enum 정의: 주요 산업 도메인 ----
-        enum def DomainKind {
-            defenseAndAerospace; // 방위산업 / 항공우주
-            automotiveAndMobility; // 모빌리티 / 자동차 / 자율주행
-            railInfrastructureAndEnergy; // 철도 / 인프라 / 플랜트
-            biomedicalAndHealthcare; // 의료기기 / 헬스케어
-            itAndSoftware; // IT / 소프트웨어 시스템
-            academiaAndResearch; // 학계 / 연구소
-            other; // 기타
-        }
-
-        // ---- Enum 정의: 거주 및 주요 활동 지역 ----
-        enum def RegionKind {
-            seoul; // 서울
-            gyeonggiIncheon; // 경기 / 인천
-            daejeonSejongChungcheong; // 대전 / 세종 / 충청
-            daeguGyeongbuk; // 대구 / 경북
-            busanUlsanGyeongnam; // 부산 / 울산 / 경남
-            gwangjuJeolla; // 광주 / 전라
-            gangwon; // 강원
-            jeju; // 제주
-            other; // 기타
-        }
-
         attribute name : String;
         attribute email : String [0..*];
         attribute affiliation : String [0..1];

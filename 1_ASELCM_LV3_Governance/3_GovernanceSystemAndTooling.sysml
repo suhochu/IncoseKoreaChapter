@@ -56,19 +56,19 @@ package GovernanceSystemAndTooling {
              */
 
             // 1) 모델링 규약 및 스캐폴드 상속 원칙
-            part namingConventions : ModelingConventions::NamingConventionRule [1..*];
-            part vcsPolicy : ModelingConventions::VersionControlPolicy;
-            part scaffoldRule : ModelingConventions::ScaffoldInheritanceRule;
+            constraint namingConventions : ModelingConventions::NamingConventionRule [1..*];
+            constraint vcsPolicy : ModelingConventions::VersionControlPolicy;
+            constraint scaffoldRule : ModelingConventions::ScaffoldInheritanceRule;
 
             // 2) 글로벌 정책, 국제 SE 표준 및 기업 보안 규정
-            part sectorDirectives : PolicyAndDirectives::SectorComplianceRule [1..*];
-            part standardPolicy : PolicyAndDirectives::SEStandardAlignmentPolicy;
-            part securityPolicy : PolicyAndDirectives::EnterpriseSecurityAndIPPolicy;
+            requirement sectorDirectives : PolicyAndDirectives::SectorComplianceRule [1..*];
+            requirement standardPolicy : PolicyAndDirectives::SEStandardAlignmentPolicy;
+            requirement securityPolicy : PolicyAndDirectives::EnterpriseSecurityAndIPPolicy;
 
             // 3) 품질 보증 프로세스 및 게이트 (교수님 피드백 3종 + 가이드 6대 Gate + 챕터 성장 Gate)
-            part qaProcess : ModelReviewProcess;
-            part lv1AssignmentGate : ReferenceModelAssignmentApprovalGate;
-            part chapterMaturityGate : PhaseTransitionGateCondition;
+            perform action qaProcess : ModelReviewProcess;
+            constraint lv1AssignmentGate : ReferenceModelAssignmentApprovalGate;
+            constraint chapterMaturityGate : PhaseTransitionGateCondition;
 
             // 4) 도구 생태계 인프라
             part repositoryServer : ToolingEcosystem::ModelRepositoryServer;

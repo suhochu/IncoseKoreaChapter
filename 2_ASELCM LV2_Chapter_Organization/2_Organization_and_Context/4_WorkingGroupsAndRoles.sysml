@@ -4,6 +4,7 @@ package WorkingGroupsAndRoles {
     private import ChapterMembersDirectory::*;
     private import ChapterSystemContext::*;
     private import ChapterSprint::*;
+    private import WG_Submissions_Tracker::*;
 
     part def ChapterRole {
         attribute roleTitle : String;
@@ -14,7 +15,8 @@ package WorkingGroupsAndRoles {
     part def WorkingGroup {
         attribute wgName : String;
         attribute targetSystemScope : String;
-        attribute targetRepoDomainFolder : String; // '6. Projects/1. Domains' 하위 폴더 경로
+        attribute domain : DomainKind [0..*];
+        ref targetFolder : DirectoryFolder [0..1]; // KnowledgeRepository 내 '6. Projects/1. Domains' 하위 폴더
         attribute targetSysmlPackagePath : String; // SysML v2 모델 내 LV1 패키지 경로
         part lead : ChapterRole;
         ref participants : IncoseKoreaChapterMember [1..*];
@@ -24,7 +26,19 @@ package WorkingGroupsAndRoles {
     }
 
     part def ChapterLogicalOrganization {
-        part representative : ChapterRole {
+        doc
+        /* 챕터 논리 조직의 순수 구조 정의 (Definition). 구체 회원/WG 바인딩은 chapterOrganization(Usage)에서 수행. */
+        part representative : ChapterRole;
+        part secretary : ChapterRole;
+        part aerospaceWG : WorkingGroup;
+        part automotiveWG : WorkingGroup;
+        part itSwWG : WorkingGroup;
+        part semiconductorWG : WorkingGroup;
+    }
+
+    // ---- 챕터 논리 조직 인스턴스 (Usage) ----
+    part chapterOrganization : ChapterLogicalOrganization {
+        part :>> representative {
             :>> roleTitle = "Chapter Representative (챕터 대표)";
             ref :>> assignee = ChapterMembersDirectory::'이중윤';
             :>> responsibilities = (
@@ -33,7 +47,7 @@ package WorkingGroupsAndRoles {
             );
         }
 
-        part secretary : ChapterRole {
+        part :>> secretary {
             :>> roleTitle = "General Secretary (총무 및 운영 담당)";
             ref :>> assignee = ChapterMembersDirectory::'추수호';
             :>> responsibilities = (
@@ -44,11 +58,14 @@ package WorkingGroupsAndRoles {
         }
 
         // [1. Aerospace WG]
-        part aerospaceWG : WorkingGroup {
+        part :>> aerospaceWG {
             :>> wgName = "1. Aerospace Working Group";
             :>> targetSystemScope =
                 "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 3대 임무 체계 전체)";
-            :>> targetRepoDomainFolder = "6. Projects/1. Domains/1. Aerospace";
+            :>> domain = DomainKind::defenseAndAerospace;
+            ref :>> targetFolder =
+                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom1_Aerospace;
+            ref :>> activeSubmissions = WG_Submissions_Tracker::aerospaceWG_Sub_Assignment2;
             :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/1_Aerospace_WG";
             part :>> lead {
                 :>> roleTitle = "Aerospace WG Lead";
@@ -61,11 +78,14 @@ package WorkingGroupsAndRoles {
         }
 
         // [2. Automotive WG]
-        part automotiveWG : WorkingGroup {
+        part :>> automotiveWG {
             :>> wgName = "2. Automotive Working Group";
             :>> targetSystemScope =
                 "2035 소프트웨어 중심 자동차(SDV) 및 섀시를 포함한 Vehicle 전체 시스템";
-            :>> targetRepoDomainFolder = "6. Projects/1. Domains/2. Automotive";
+            :>> domain = DomainKind::automotiveAndMobility;
+            ref :>> targetFolder =
+                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom2_Automotive;
+            ref :>> activeSubmissions = WG_Submissions_Tracker::automotiveWG_Sub_Assignment2;
             :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/2_Automotive_WG";
             part :>> lead {
                 :>> roleTitle = "Automotive WG Lead";
@@ -78,10 +98,13 @@ package WorkingGroupsAndRoles {
         }
 
         // [3. IT 폴더 매핑]
-        part itSwWG : WorkingGroup {
+        part :>> itSwWG {
             :>> wgName = "3. IT & Robotics Working Group";
             :>> targetSystemScope = "2035 재난 탐색 및 구조 지원 로봇 시스템 전체";
-            :>> targetRepoDomainFolder = "6. Projects/1. Domains/3. IT";
+            :>> domain = DomainKind::itAndSoftware;
+            ref :>> targetFolder =
+                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom3_IT;
+            ref :>> activeSubmissions = WG_Submissions_Tracker::itRoboticsWG_Sub_Assignment2;
             :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/3_IT_WG";
             part :>> lead {
                 :>> roleTitle = "IT & Robotics WG Lead";
@@ -94,11 +117,14 @@ package WorkingGroupsAndRoles {
         }
 
         // [4. Semiconductor 폴더 매핑]
-        part semiconductorWG : WorkingGroup {
+        part :>> semiconductorWG {
             :>> wgName = "4. Semiconductor Working Group";
             :>> targetSystemScope =
                 "2035 EUV 제니스 반도체 장비 시스템 (Level 0 리소그래피/타 공정 컨텍스트 및 Fab 베리에이션 포함)";
-            :>> targetRepoDomainFolder = "6. Projects/1. Domains/4. Semiconductor";
+            :>> domain = DomainKind::other;
+            ref :>> targetFolder =
+                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom4_Semiconductor;
+            ref :>> activeSubmissions = WG_Submissions_Tracker::semiconductorWG_Sub_Assignment2;
             :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/4_Semiconductor_WG";
             part :>> lead {
                 :>> roleTitle = "Semiconductor WG Lead";

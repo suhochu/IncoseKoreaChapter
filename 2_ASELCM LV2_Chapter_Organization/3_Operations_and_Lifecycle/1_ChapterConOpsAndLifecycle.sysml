@@ -7,6 +7,7 @@ package ChapterConOpsAndLifecycle {
     private import ScalarValues::*;
     private import ChapterSystemContext::*;
     private import ExternalActorsAndInterfaces::*;
+    private import ChapterMetricsAndGuards::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)
@@ -115,8 +116,7 @@ package ChapterConOpsAndLifecycle {
          */
 
         state def ChapterLifecycle {
-            attribute approvedModelsCount : Integer default 0;
-            attribute seminarArtifactsCount : Integer default 0;
+            in ref metrics : ChapterMoEsHolder;
 
             entry;
             then onlineStudyPhase;
@@ -144,20 +144,16 @@ package ChapterConOpsAndLifecycle {
 
             transition phase1To2
                 first onlineStudyPhase
-                if approvedModelsCount >= 3 and seminarArtifactsCount >= 10
+                if metrics.isPhase1To2Ready
                 then sponsorshipAndOfflineSeminarPhase {
-                doc
-                /* Phase 2 전환(Transition) 조건 (LV3 PhaseTransitionGateCondition 반영):
-                 * 승인된 도메인 참조모델(ReferenceModelArtifact) 3건 이상 & 누적 세미나/발표 자료 10건 이상 달성
-                 */
+                doc /* Phase 2 전환 조건 (Phase1ToPhase2GateConstraint 반영) */
             }
 
             transition phase2To3
-                first sponsorshipAndOfflineSeminarPhase then officialWorkingGroupPhase {
-                doc
-                /* Phase 3 전환(Transition) 조건:
-                 * 정기 오프라인 세미나 4회 이상 개최, 기업 스폰서 1곳 이상 확보 및 CSEP 보유 인원 10명 이상 달성
-                 */
+                first sponsorshipAndOfflineSeminarPhase
+                if metrics.isPhase2To3Ready
+                then officialWorkingGroupPhase {
+                doc /* Phase 3 전환 조건 (Phase2ToPhase3GateConstraint 반영) */
             }
         }
     } // package Lifecycle

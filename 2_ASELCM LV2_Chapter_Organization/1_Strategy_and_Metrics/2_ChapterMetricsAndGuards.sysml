@@ -20,6 +20,37 @@ package ChapterMetricsAndGuards {
         attribute developedAISkillsCount : Integer default 0; // MoE 3: 단계별 AI Skills 수 (Phase2 >= 3, Phase3 >= 5)
         attribute regularActiveMembersCount : Integer default 12; // MoE 4: 고정 활동 인원 수 (Phase2 > 15, Phase3 >= 30)
         attribute sepCertifiedMembersCount : Integer default 1; // MoE 5: SEP 자격 보유자 수 (Phase2 >= 3, Phase3 >= 10)
+
+        // Phase 전환 Guard용 파생 Boolean 속성 (상태머신 transition의 if 조건에서 직접 참조)
+        attribute isPhase1To2Ready : Boolean =
+            (accumulatedPresentationsCount >= 10 or regularActiveMembersCount > 15) and
+            completedReferenceModelsCount >= 3 and
+            developedAISkillsCount >= 3 and
+            sepCertifiedMembersCount >= 3;
+
+        attribute isPhase2To3Ready : Boolean =
+            regularActiveMembersCount >= 30 and
+            sepCertifiedMembersCount >= 10 and
+            developedAISkillsCount >= 5 and
+            completedReferenceModelsCount >= 3;
+
+        // Phase 1 -> Phase 2 전환 조건 수식 바인딩
+        constraint phase1To2GateCheck : Phase1ToPhase2GateConstraint {
+            in :>> presentations = accumulatedPresentationsCount;
+            in :>> refModels = completedReferenceModelsCount;
+            in :>> aiSkills = developedAISkillsCount;
+            in :>> activeMembers = regularActiveMembersCount;
+            in :>> sepMembers = sepCertifiedMembersCount;
+        }
+
+        // Phase 2 -> Phase 3 전환 조건 수식 바인딩
+        constraint phase2To3GateCheck : Phase2ToPhase3GateConstraint {
+            in :>> presentations = accumulatedPresentationsCount;
+            in :>> refModels = completedReferenceModelsCount;
+            in :>> aiSkills = developedAISkillsCount;
+            in :>> activeMembers = regularActiveMembersCount;
+            in :>> sepMembers = sepCertifiedMembersCount;
+        }
     }
 
     // =========================================================================
@@ -33,11 +64,11 @@ package ChapterMetricsAndGuards {
          * 3) 단계별 AI Architecting Skills 3개 이상 구축
          * 4) INCOSE SEP 자격 보유 인원 3명 이상 확보
          */
-        in presentations : Integer;
-        in refModels : Integer;
-        in aiSkills : Integer;
-        in activeMembers : Integer;
-        in sepMembers : Integer;
+        in :>> presentations : Integer;
+        in :>> refModels : Integer;
+        in :>> aiSkills : Integer;
+        in :>> activeMembers : Integer;
+        in :>> sepMembers : Integer;
 
         (presentations >= 10 or activeMembers > 15) and
         refModels >= 3 and
@@ -56,10 +87,15 @@ package ChapterMetricsAndGuards {
          * 3) MagicGrid 전 단계(5단계) AI Architecting Skills 5개 이상 완비
          * 4) 도메인별 참조모델 3건 이상 유지 및 고도화
          */
+        in :>> presentations : Integer;
+        in :>> refModels : Integer;
+        in :>> aiSkills : Integer;
+        in :>> activeMembers : Integer;
+        in :>> sepMembers : Integer;
 
-        (presentations >= 10 or activeMembers > 15) and
-        refModels >= 3 and
-        aiSkills >= 3 and
-        sepMembers >= 3
+        activeMembers >= 30 and
+        sepMembers >= 10 and
+        aiSkills >= 5 and
+        refModels >= 3
     }
 } // package ChapterMetricsAndGuards

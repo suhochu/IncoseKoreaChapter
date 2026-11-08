@@ -39,7 +39,7 @@ package ChapterObjectives {
     // ================================================
     // 3. System Idea / Elevator Pitch (시스템 아이디어)
     // ================================================
-    requirement def ChapterSystemIdea :> ChapterProblemStatement {
+    requirement def ChapterSystemIdea :> Objective {
         doc
         /* 1. "현장의 문제를 직접 해결하는 시스템 엔지니어링 실전 랩(Lab), INCOSE Korea 'Do-Tank' 챕터".
          * 2. 자동차 도메인의 SDV(Software Defined Vehicle) 전체 관점과 우주 도메인의 미션 시스템 전체를 대상으로 삼아, 운영자 요구사항(Operational Stakeholder Requirement)부터 소프트웨어 코드 자동 생성까지 완벽하게 이어지는 SysML v2 기반의 엔드투엔드(End-to-End) 레퍼런스 모델을 직접 구축한다.

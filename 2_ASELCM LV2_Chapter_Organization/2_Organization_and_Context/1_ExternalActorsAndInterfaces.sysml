@@ -39,17 +39,8 @@ package ExternalActorsAndInterfaces {
         attribute note : String;
     }
 
-    // ---- 2.2 외부 시스템 측 대응 포트 ----
-    port def VendorChapterInterfacePort { out item toolLicenseInfoOut : ToolLicenseInfoItem; }
-    port def SectorChapterInterfacePort { in item activityReportIn : SectorActivityReportItem; }
-    port def TechOpsChapterInterfacePort { out item handbookResourceOut : HandbookResourceItem; }
-    port def SponsorChapterInterfacePort { out item sponsorshipOut : SponsorshipItem; }
-    port def PeerChapterInterfacePort {
-        in item peerBenchmarkIn : PeerBenchmarkItem;
-        out item peerBenchmarkOut : PeerBenchmarkItem;
-    }
-
-    // ---- 2.3 Chapter 측 경계 포트 ----
+    // ---- 2.2 Chapter 측 경계 포트 (기준 포트) ----
+    // 외부 액터 측은 별도 포트를 중복 정의하지 않고 켤레 포트(~)로 대칭성을 보장한다.
     port def ChapterToolInterfacePort { in item toolLicenseInfoIn : ToolLicenseInfoItem; }
     port def ChapterSectorInterfacePort { out item activityReportOut : SectorActivityReportItem; }
     port def ChapterTechOpsInterfacePort { in item handbookResourceIn : HandbookResourceItem; }
@@ -59,36 +50,36 @@ package ExternalActorsAndInterfaces {
         in item peerBenchmarkIn : PeerBenchmarkItem;
     }
 
-    // ---- 2.4 경계 외부 액터 (Context Actors) ----
+    // ---- 2.3 경계 외부 액터 (Context Actors) ----
     part def ContextToolVendor {
         doc
         /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). 기존 ToolVendor 속성 통합. */
         attribute toolName : String;
         attribute licenseRequired : Boolean;
-        port vendorInterface : VendorChapterInterfacePort;
+        port vendorInterface : ~ChapterToolInterfacePort;
     }
 
     part def ContextINCOSESector {
         doc
         /* INCOSE Asia-Oceania Sector (Sector III). 운용 뷰포인트 보고 대상. */
-        port sectorInterfaceOut : SectorChapterInterfacePort;
+        port sectorInterfaceOut : ~ChapterSectorInterfacePort;
     }
 
     part def ContextTechnicalOperations {
         doc
         /* 50개 이상의 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
-        port techOpsInterfaceOut : TechOpsChapterInterfacePort;
+        port techOpsInterfaceOut : ~ChapterTechOpsInterfacePort;
     }
 
     part def ContextChapterAffiliationSponsor {
         doc
         /* 계약 기반 후원 조직(CAS). Phase 1에서는 미고려(조건부). */
-        port sponsorInterfaceOut : SponsorChapterInterfacePort;
+        port sponsorInterfaceOut : ~ChapterSponsorInterfacePort;
     }
 
     part def ContextPeerSocietyOrganization {
         doc
         /* KOSSE/KCOSE 등 조직 대 조직 인터페이스. Phase 1 비활성. */
-        port peerOrgInterfaceOut : PeerChapterInterfacePort;
+        port peerOrgInterfaceOut : ~ChapterPeerInterfacePort;
     }
 } // package ExternalActorsAndInterfaces

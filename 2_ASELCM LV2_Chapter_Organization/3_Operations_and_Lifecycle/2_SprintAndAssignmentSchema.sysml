@@ -4,6 +4,7 @@ package ChapterSprint {
     private import ChapterConOpsAndLifecycle::ConOps::*;
     private import ChapterSystemContext::*;
     private import ScalarValues::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // =========================================================================
     // 1. 격주 스프린트 및 킥오프 회의 공통 템플릿
@@ -87,6 +88,16 @@ package ChapterSprint {
         attribute passGate5_ThreeExternalScopes : Boolean default false; // 조직/물리/자연 각 2개 이상 및 외란 아이템화 여부
         attribute passGate6_NoIsolatedActor : Boolean default false; // 모든 외부 액터의 시나리오 최소 1회 등장 여부
 
-        constraint gateCheck : QualityGatesAndReviewProcess::ReferenceModelAssignmentApprovalGate;
+        constraint gateCheck : QualityGatesAndReviewProcess::ReferenceModelAssignmentApprovalGate {
+            in :>> passFb1 = passFeedback1_MissionConOps;
+            in :>> passFb2 = passFeedback2_MOEQuantified;
+            in :>> passFb3 = passFeedback3_BlackBoxInfra;
+            in :>> passG1 = passGate1_WholeSystem;
+            in :>> passG2 = passGate2_SolutionFreeBlackBox;
+            in :>> passG3 = passGate3_TimeframeLinked;
+            in :>> passG4 = passGate4_ODDThreeGroups;
+            in :>> passG5 = passGate5_ThreeExternalScopes;
+            in :>> passG6 = passGate6_NoIsolatedActor;
+        }
     }
 } // package ChapterSprint

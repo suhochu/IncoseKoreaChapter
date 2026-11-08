@@ -8,8 +8,6 @@ package ModelingConventionsAndPolicies {
      */
 
     private import ScalarValues::*;
-    private import ChapterSystemContext::*;
-    private import LV1_BlackBox_ConOps_Scaffold::*;
 
     // ==========================================
     // 1. Modeling Conventions (모델링 규약, 스캐폴드 상속 및 형상 관리)

@@ -21,6 +21,12 @@ package LV1_BlackBox_ConOps_Scaffold {
         doc
         /* 대상시스템의 존재 목적(What/Why)과 성공 판정 기준(MOE)을 정의하는 추상 계층 */
 
+        // MOE 평가 방향: 클수록 좋은 지표(maximize)와 작을수록 좋은 지표(minimize) 구분
+        enum def EvaluationDirectionKind {
+            minimize; // 하향 지표 (예: 응답 시간, 사고율) - 평가값이 한계값 이하여야 달성
+            maximize; // 상향 지표 (예: 성공률, 가용성) - 평가값이 한계값 이상이어야 달성
+        }
+
         // [교수님 피드백 2] 목표값(Target), 한계값(Threshold), 단위(Unit)를 갖춘 MOE 구조체
         attribute def MOEMetric {
             doc
@@ -30,16 +36,20 @@ package LV1_BlackBox_ConOps_Scaffold {
             attribute metricId : String; // 지표 식별자 (예: "MOE-01")
             attribute metricName : String; // 지표 명칭
             attribute unit : String; // 측정 단위 (예: "%", "분", "건/년", "m")
+            attribute direction : EvaluationDirectionKind default EvaluationDirectionKind::maximize; // 평가 방향 (기본: 상향)
             attribute thresholdValue : Real; // 한계값 (Threshold: 임무 성공 최소 허용 기준)
             attribute targetValue : Real; // 목표값 (Objective/Target: 지향하는 이상적 기준)
             attribute evaluationCondition : String; // 측정 조건 (예: "ODD 전 구간 운용 기준")
             attribute evaluatedValue : Real [0..1]; // 시나리오/시뮬레이션 수행 후 평가값
         }
 
-        // MOE 달성 여부 판정 제약식 (필요 시 하위 도메인에서 부등호 방향 재정의 가능)
+        // MOE 달성 여부 판정 제약식 (direction에 따라 부등호 방향이 결정됨)
         constraint def MOEAchievementConstraint {
             in moe : MOEMetric;
-            moe.evaluatedValue >= moe.thresholdValue
+            if moe.direction == EvaluationDirectionKind::maximize ?
+                moe.evaluatedValue >= moe.thresholdValue
+            else
+                moe.evaluatedValue <= moe.thresholdValue
         }
 
         // [교수님 피드백 1, 2 & 가이드 2장] Mission Triad (What / Why / Validation) 추상 요구사항
@@ -202,7 +212,7 @@ package LV1_BlackBox_ConOps_Scaffold {
              * 각 2개 이상의 3대 외부 환경 액터(Gate 5)를 통합하는 컨텍스트 템플릿.
              */
             // [Gate 3] 운용 시점의 인프라·법규·외란 전제 조건 강제
-            requirement timefrqme {
+            requirement timeframeReq {
                 assume constraint timeframeAssumption : BaseTimeframeInfrastructureAssumption;
             }
 
@@ -348,6 +358,7 @@ package LV1_BlackBox_ConOps_Scaffold {
                 :>> metricId = "MOE-01";
                 :>> metricName = "<운용효과성측정지표 명칭>";
                 :>> unit = "<단위: %, 분, 건/년 등>";
+                :>> direction = EvaluationDirectionKind::maximize; // 하향 지표(작을수록 좋음)이면 minimize로 변경
                 :>> thresholdValue = 0.0; // <한계값 입력>
                 :>> targetValue = 0.0; // <목표값 입력>
                 :>> evaluationCondition = "<ODD 내 측정 조건 입력>";
@@ -364,22 +375,29 @@ package LV1_BlackBox_ConOps_Scaffold {
             :>> lifecycleEvolutionTrait = "<배포 후 수명주기 동안의 진화/유지보수 가정>";
         }
 
-        // [Step C] 블랙박스 SoI 및 3대 외부 액터(각 2개 이상) 정의
+        // [Step C] 블랙박스 SoI 및 블랙박스 ConOps 시나리오 정의
         part def DomainBlackBoxSoI :> BaseBlackBoxSoI {
             :>> soiName =
                 "<하위 부품이 아닌 독립 임무 완결형 최상위 대상시스템(Whole-System) 명칭>";
-            satisfy requirement : DomainMissionObjective;
         }
 
-        part def DomainOperationalContext :> BaseBlackBoxOperationalContext {
-            :>> targetSoI : DomainBlackBoxSoI;
-            // externalOrganizations, externalPhysicalSystems, externalNaturalEnvironments를
-            // 각 2개 이상 구체화하고 connect 문으로 targetSoI의 경계 포트와 연결
-        }
-
-        // [Step D] 블랙박스 ConOps 시나리오 정의 및 임무 만족(satisfy) 연결
         action def DomainConOpsScenario :> BaseBlackBoxConOpsScenario {
             // step1 ~ step5의 5-Tuple 속성을 도메인 상호작용에 맞게 재정의(:>>)
+        }
+
+        // [Step D] 도메인 운용 컨텍스트 통합 및 임무 만족(satisfy) 연결
+        part def DomainOperationalContext :> BaseBlackBoxOperationalContext {
+            requirement domainMission : DomainMissionObjective;
+
+            :>> targetSoI : DomainBlackBoxSoI;
+            perform action conOpsScenario : DomainConOpsScenario;
+
+            // externalOrganizations, externalPhysicalSystems, externalNaturalEnvironments를
+            // 각 2개 이상 구체화하고 connect 문으로 targetSoI의 경계 포트와 연결
+
+            // [교수님 피드백 1] 대상시스템(SoI) 및 운용시나리오(ConOps)가 도메인 임무 목표를 만족함
+            satisfy domainMission by targetSoI;
+            satisfy domainMission by conOpsScenario;
         }
     } // package DomainWG_Template_Skeleton
 } // package LV1_BlackBox_ConOps_Scaffold

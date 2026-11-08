@@ -187,24 +187,6 @@ package ChapterSystemContext {
         part member : Member [1..*];
         part repository : KnowledgeRepository;
         part capabilities : ChapterCapability [0..*];
-
-        // Phase 1 -> Phase 2 전환 조건 수식 바인딩
-        constraint phase1To2GateCheck : ChapterMetricsAndGuards::Phase1ToPhase2GateConstraint {
-            in presentations = accumulatedPresentationsCount;
-            in refModels = completedReferenceModelsCount;
-            in aiSkills = developedAISkillsCount;
-            in activeMembers = regularActiveMembersCount;
-            in sepMembers = sepCertifiedMembersCount;
-        }
-
-        // Phase 2 -> Phase 3 전환 조건 수식 바인딩
-        constraint phase2To3GateCheck : ChapterMetricsAndGuards::Phase2ToPhase3GateConstraint {
-            in presentations = accumulatedPresentationsCount;
-            in activeMembers = regularActiveMembersCount;
-            in sepMembers = sepCertifiedMembersCount;
-            in aiSkills = developedAISkillsCount;
-            in refModels = completedReferenceModelsCount;
-        }
     }
 
     part def ChapterInContext :> KoreaChapter {

@@ -86,7 +86,7 @@ package ChapterViews {
         }
         view col_what :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attributeName = "coreValueWhat"; // [개선] ':>>' 재정의 문법 적용
+                attributeName = "coreValueWhat";
             }
             attribute :>> columnWidth = 350;
         }
@@ -112,7 +112,7 @@ package ChapterViews {
          * 1) exposeFeaturesAndHeritage = true 설정을 통해 상위 ChapterMoEsHolder로부터 상속받은
          *    5대 MoE 속성이 테이블 셀에 정상 렌더링되도록 보장함.
          * 2) expose 경로에서 incoseKoreaChapterContext 내의 chapter 파트를 노출하고,
-         *    ColumnType::attributeValue 내부의 attributeName을 ':>>'로 정확히 재정의함.
+         *    ColumnType::attributeValue 내부의 attributeName을 지정함.
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
