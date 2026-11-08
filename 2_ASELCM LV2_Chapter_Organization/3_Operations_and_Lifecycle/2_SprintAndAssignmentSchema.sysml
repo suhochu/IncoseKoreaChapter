@@ -88,16 +88,31 @@ package ChapterSprint {
         attribute passGate5_ThreeExternalScopes : Boolean default false; // 조직/물리/자연 각 2개 이상 및 외란 아이템화 여부
         attribute passGate6_NoIsolatedActor : Boolean default false; // 모든 외부 액터의 시나리오 최소 1회 등장 여부
 
-        constraint gateCheck : QualityGatesAndReviewProcess::ReferenceModelAssignmentApprovalGate {
-            in :>> passFb1 = passFeedback1_MissionConOps;
-            in :>> passFb2 = passFeedback2_MOEQuantified;
-            in :>> passFb3 = passFeedback3_BlackBoxInfra;
-            in :>> passG1 = passGate1_WholeSystem;
-            in :>> passG2 = passGate2_SolutionFreeBlackBox;
-            in :>> passG3 = passGate3_TimeframeLinked;
-            in :>> passG4 = passGate4_ODDThreeGroups;
-            in :>> passG5 = passGate5_ThreeExternalScopes;
-            in :>> passG6 = passGate6_NoIsolatedActor;
+        // Gate 판정에 필요한 정량 입력값 (MOE 개수, 외부 액터 범위별 개수)
+        attribute identifiedMoeCount : Integer default 0;
+        attribute identifiedOrgActorCount : Integer default 0;
+        attribute identifiedPhysActorCount : Integer default 0;
+        attribute identifiedNatureActorCount : Integer default 0;
+
+        // 체크리스트/정량값을 통합 승인 게이트(ReferenceModelAssignmentApprovalGate)의 실제 입력 파라미터에 바인딩
+        constraint gateCheck : ReferenceModelAssignmentApprovalGate {
+            in isMissionConOps = passFeedback1_MissionConOps;
+            in hasE2EFlow = passFeedback1_MissionConOps;
+            in definedMoeCount = identifiedMoeCount;
+            in hasQuantMetrics = passFeedback2_MOEQuantified;
+            in noVagueWords = passFeedback2_MOEQuantified;
+            in isBBContextConsistent = passFeedback3_BlackBoxInfra;
+            in isTimeframeLinked = passFeedback3_BlackBoxInfra;
+            in isWholeSystem = passGate1_WholeSystem;
+            in isBlackBoxPure = passGate2_SolutionFreeBlackBox;
+            in hasFourTimeframeAssumptions = passGate3_TimeframeLinked;
+            in hasThreeTierODD = passGate4_ODDThreeGroups;
+            in orgActorCount = identifiedOrgActorCount;
+            in physActorCount = identifiedPhysActorCount;
+            in natureActorCount = identifiedNatureActorCount;
+            in isDisturbanceItemized = passGate5_ThreeExternalScopes;
+            in noIsolatedActors = passGate6_NoIsolatedActor;
+            in hasAllThreeScenarioFlows = passGate6_NoIsolatedActor;
         }
     }
 } // package ChapterSprint

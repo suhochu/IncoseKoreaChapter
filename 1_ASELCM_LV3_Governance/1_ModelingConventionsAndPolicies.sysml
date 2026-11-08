@@ -27,6 +27,7 @@ package ModelingConventionsAndPolicies {
              */
             attribute isPascalCaseDef : Boolean default true;
             attribute isCamelCaseUsage : Boolean default true;
+            isPascalCaseDef and isCamelCaseUsage
         }
 
         constraint def VersionControlPolicy {
@@ -52,6 +53,12 @@ package ModelingConventionsAndPolicies {
             attribute inheritsCommonScaffold : Boolean;
             attribute maintainsPortTypeSymmetry : Boolean; // 외부 액터 포트(~)와 SoI 포트 간 대칭성 유지 여부
             inheritsCommonScaffold and maintainsPortTypeSymmetry
+        }
+
+        constraint def EnterpriseSecurityRule {
+            attribute isInternalDataExcluded : Boolean;
+            attribute isCompanyProjectAnonymized : Boolean;
+            isInternalDataExcluded and isCompanyProjectAnonymized
         }
     } // package ModelingConventions
 
@@ -91,8 +98,7 @@ package ModelingConventionsAndPolicies {
              * 1) 사내 실제 수치 및 프로젝트명/회사명 직접 기재 절대 금지
              * 2) 인터넷 공개 데이터 및 AI 기반 가상 치환 데이터(Anonymized Data)만 사용
              */
-            attribute isInternalDataExcluded : Boolean;
-            attribute isCompanyProjectAnonymized : Boolean;
+            require constraint security : ModelingConventions::EnterpriseSecurityRule;
         }
     } // package PolicyAndDirectives
 } // package ModelingConventionsAndPolicies
