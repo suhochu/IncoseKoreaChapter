@@ -1,3 +1,51 @@
+##0_ASELCM_Integration/ASELCM_SystemOfSystems.sysml##
+package ASELCM_SystemOfSystems {
+    doc
+    /* ASELCM 통합 패키지: LV3(거버넌스)와 LV2(챕터 조직)를 함께 묶는 유일한 위치.
+     *
+     * 의존 방향: 이 패키지 -> LV3, LV2 (단방향). LV3는 LV2를 import하지 않고, LV2는 이 패키지를 import하지 않는다.
+     * 여기서 하는 일:
+     *  1) GovernanceSystemContext 와 incoseKoreaChapterContext 를 하나의 상위 part로 포함하고 포트를 connect 한다.
+     *  2) chapter 에 행위(perform action)와 수명주기(exhibit state)를 연결한다.
+     */
+
+    private import GovernanceSystemAndTooling::GovernanceSystem::*;
+    private import ChapterSystemContext::*;
+    private import ChapterConOpsAndLifecycle::ConOps::*;
+    private import ChapterConOpsAndLifecycle::Lifecycle::*;
+
+    part def AselcmSystemOfSystems {
+        doc
+        /* System 3(거버넌스)와 System 2(챕터)의 상위 시스템. System 1(LV1 참조모델)은 별도 모델로 유지한다. */
+
+        part governance : GovernanceSystemContext;
+
+        // 구조 baseline(incoseKoreaChapterContext)을 subset 하고 chapter 에 행위/상태만 추가한다.
+        // TODO(확인 필요): 패키지 수준 part usage를 ':>' 로 subset 하는 구성은 Syside check 를 통과했으나,
+        //   결과 인스턴스가 baseline과 같은 chapter 인스턴스를 공유하는지는 확인하지 못했다.
+        //   공유되지 않으면 baseline 쪽 part 를 part def 로 바꾸고 usage 를 이 패키지에서 생성하는 구조로 전환한다.
+        part chapterContext :> incoseKoreaChapterContext {
+            part :>> chapter {
+                // 행위-구조 연결
+                // TODO(확인 필요): 각 action 의 in/out 파라미터(internalData 등)는 아직 chapter.repository 와 바인딩하지 않았다.
+                perform action sectorReporting : SectorReporting;
+                perform action referenceModelDevelopment : ReferenceModelDevelopmentProcess;
+                perform action knowledgeExchange : KnowledgeExchangeSession;
+
+                // 수명주기 상태머신: metrics 는 chapter 자신(ChapterMoEsHolder 상속)을 가리킨다.
+                exhibit state lifecycle : ChapterLifecycle {
+                    in ref :>> metrics = chapter;
+                }
+            }
+        }
+
+        // LV3 정책(out)/지표(in) 포트와 LV2 켤레(~) 포트 연결
+        connect governance.governanceInterface to chapterContext.chapter.governanceInterface;
+    }
+
+    part aselcmSystemOfSystems : AselcmSystemOfSystems;
+} // package ASELCM_SystemOfSystems
+
 ##0_Libraries/SysideViews.sysml##
 // Copyright (c) 2026 Sensmetry, UAB. All Rights Reserved.
 // Version 0.10.1
@@ -328,6 +376,9 @@ package ModelingConventionsAndPolicies {
      *   - System 2 (LV2: INCOSE Korea Chapter 조직 및 과제 운영 모델)
      *   - System 1 (LV1: 워킹그룹별 도메인 참조모델 - 3_ASELCM_LV1_Target_Reference_Models)
      * 목적: 챕터 운영 모델과 도메인 참조모델의 일관성, 확장성, 표준 준수성 및 학술적 엄밀성을 통제하는 거버넌스 프레임워크
+     *
+     * 의존 방향: LV3는 LV2/LV1을 import하지 않는다. LV2와 LV3를 함께 묶는 요소는
+     * 0_ASELCM_Integration/ASELCM_SystemOfSystems.sysml 에만 둔다.
      */
 
     private import ScalarValues::*;
@@ -344,24 +395,41 @@ package ModelingConventionsAndPolicies {
 
         constraint def NamingConventionRule {
             doc
-            /* 1) 모든 Definition(part def, action def, item def 등)은 PascalCase 준수
-             * 2) 모든 Usage 및 Attribute는 camelCase 준수
-             * 3) 주석(doc)으로만 정보를 남기지 않고 정형 속성(attribute)과 참조(ref)로 모델링
+            /* 모델 요소 명명 규칙. 아래 패턴은 현재 모델에서 실제로 쓰이는 형태를 기준으로 정리한 것이며,
+             * 각 판정값은 기본값 없이 검토(리뷰/린트) 결과를 입력으로 받는다.
+             *
+             * 1) Definition(part def, action def, item def, constraint def 등)과 Package는 PascalCase.
+             *    숫자와 밑줄(_)은 구분자로만 허용한다. (예: Gate1_WholeSystemScopeRule, SprintMeetings_2026_Q4)
+             * 2) Usage와 Attribute는 lowerCamelCase.
+             *    밑줄(_)은 '순번/식별자/날짜' 접미 또는 접두 구분에만 허용한다.
+             *    (예: folder1_Meeting, kickOffMeeting_20261009, ai1_setupChannels, need_M001)
+             * 3) Enum 값은 lowerCamelCase. 순번이 필요하면 'stage1_...' 처럼 소문자 접두 + 순번 + 밑줄을 쓴다.
+             * 4) 식별자(예: 회원 ID)는 별도 attribute를 만들지 않고 SysML short name(<M001>)으로 부여한다.
+             * 5) 따옴표 이름('이수', 'member value viewpoint')은 사람 이름과 Viewpoint처럼 표시명이 필요한 요소에만 허용한다.
+             * 6) 주석(doc)으로만 정보를 남기지 않고 정형 속성(attribute)과 참조(ref)로 모델링한다.
              */
-            attribute isPascalCaseDef : Boolean default true;
-            attribute isCamelCaseUsage : Boolean default true;
+            in isPascalCaseDef : Boolean;
+            in isPascalCasePackage : Boolean;
+            in isCamelCaseUsage : Boolean;
+            in isCamelCaseEnumLiteral : Boolean;
+            in isUnderscoreUsedOnlyAsSeparator : Boolean;
+            isPascalCaseDef and isPascalCasePackage and isCamelCaseUsage and
+            isCamelCaseEnumLiteral and isUnderscoreUsedOnlyAsSeparator
+            // TODO(확인 필요): 위 판정값을 채우는 자동 점검 수단(Syside Python API 린트 스크립트 등)이 아직 없다.
+            //   입력이 바인딩되지 않은 동안에는 판정이 수행되지 않는다(과거의 'default true'로 인한 항상 참 문제는 제거함).
         }
 
         constraint def VersionControlPolicy {
             doc
             /* 메인 브랜치(main) 및 KnowledgeRepository 병합 전:
              * 1) 워킹그룹 리드(WG Lead)의 1차 모델 검토
-             * 2) 학술자문단(Academic Advisors: 교수진)의 방법론/피드백 검증
+             * 2) 학술자문단(Academic Advisors)의 방법론/피드백 검증
              * 3) 보안 및 형상 관리 Pull Request 승인 필수
+             * 위 순서는 QualityGatesAndReviewProcess::ModelReviewProcess 의 검토 단계와 일치해야 한다.
              */
-            attribute isWGLeadReviewed : Boolean;
-            attribute isAcademicAdvisorApproved : Boolean;
-            attribute isSecretaryMerged : Boolean;
+            in isWGLeadReviewed : Boolean;
+            in isAcademicAdvisorApproved : Boolean;
+            in isSecretaryMerged : Boolean;
             isWGLeadReviewed and isAcademicAdvisorApproved and isSecretaryMerged
         }
 
@@ -372,9 +440,15 @@ package ModelingConventionsAndPolicies {
              * 'LV1_BlackBox_ConOps_Scaffold'의 추상 정의(BaseMissionObjective, BaseBlackBoxSoI,
              * BaseBlackBoxOperationalContext, BaseBlackBoxConOpsScenario)를 상속(:>)하여 구현해야 함.
              */
-            attribute inheritsCommonScaffold : Boolean;
-            attribute maintainsPortTypeSymmetry : Boolean; // 외부 액터 포트(~)와 SoI 포트 간 대칭성 유지 여부
+            in inheritsCommonScaffold : Boolean;
+            in maintainsPortTypeSymmetry : Boolean; // 외부 액터 포트(~)와 SoI 포트 간 대칭성 유지 여부
             inheritsCommonScaffold and maintainsPortTypeSymmetry
+        }
+
+        constraint def EnterpriseSecurityRule {
+            in isInternalDataExcluded : Boolean;
+            in isCompanyProjectAnonymized : Boolean;
+            isInternalDataExcluded and isCompanyProjectAnonymized
         }
     } // package ModelingConventions
 
@@ -387,24 +461,45 @@ package ModelingConventionsAndPolicies {
          * 국제 SE 표준(ISO 15288, GtWR v4), 기업 정보보안 규정을 강제하는 정책 패키지.
          */
 
+        private import ModelingConventions::*;
+
         requirement def SectorComplianceRule {
             doc
             /* 아시아-오세아니아 섹터(Sector III) 정기 활동 보고 양식 및 주기 준수 규정 */
+            attribute isReportFormatCompliant : Boolean;
+            attribute isReportedWithinRequiredPeriod : Boolean;
+
+            require constraint sectorReportCompliance {
+                isReportFormatCompliant and isReportedWithinRequiredPeriod
+            }
         }
 
         requirement def ToolLicensePolicy {
             doc
             /* 상용 MBSE 툴(Cameo 등), Syside 및 SysML v2 API 사용 시 라이선스 위반 방지 규정 */
+            attribute isLicenseHeldByAllParticipants : Boolean;
+            attribute isUsageWithinLicenseScope : Boolean; // 예: Community Edition 가용 범위
+
+            require constraint toolLicenseCompliance {
+                isLicenseHeldByAllParticipants and isUsageWithinLicenseScope
+            }
         }
 
         requirement def SEStandardAlignmentPolicy {
             doc
             /* [실무 가이드 표준 근거 반영]
-             * 모든 LV1 참조모델 및 LV2 요구사항은 아래 3대 국제 표준을 준거 틀로 삼아야 함:
+             * 모든 LV1 참조모델 및 LV2 요구사항은 아래 국제 표준을 준거 틀로 삼아야 함:
              * 1) ISO/IEC/IEEE 15288 (시스템 생명주기 프로세스 - 문제 공간과 해결 공간의 분리)
-             * 2) INCOSE GtWR v4 (Guide to Writing Requirements - What/Why/Validation 3대 축)
+             * 2) INCOSE GtWR v4 (Guide to Writing Requirements - What/Why/Validation 축)
              * 3) OMG SysML v2 (정형 텍스트 및 그래픽 모델링 표준 문법)
              */
+            attribute isAlignedWithIso15288 : Boolean;
+            attribute isAlignedWithGtWR : Boolean;
+            attribute isAlignedWithSysMLv2 : Boolean;
+
+            require constraint standardAlignment {
+                isAlignedWithIso15288 and isAlignedWithGtWR and isAlignedWithSysMLv2
+            }
         }
 
         requirement def EnterpriseSecurityAndIPPolicy {
@@ -414,8 +509,7 @@ package ModelingConventionsAndPolicies {
              * 1) 사내 실제 수치 및 프로젝트명/회사명 직접 기재 절대 금지
              * 2) 인터넷 공개 데이터 및 AI 기반 가상 치환 데이터(Anonymized Data)만 사용
              */
-            attribute isInternalDataExcluded : Boolean;
-            attribute isCompanyProjectAnonymized : Boolean;
+            require constraint security : EnterpriseSecurityRule;
         }
     } // package PolicyAndDirectives
 } // package ModelingConventionsAndPolicies
@@ -423,174 +517,265 @@ package ModelingConventionsAndPolicies {
 ##1_ASELCM_LV3_Governance/2_QualityGatesAndReviewProcess.sysml##
 package QualityGatesAndReviewProcess {
     private import ScalarValues::*;
+
     // =========================================================================
-    // 3. Quality Assurance & Maturity Gates (품질 보증, 교수님 피드백 & 6대 게이트)
+    // 3. Quality Assurance & Maturity Gates (품질 보증, 학술자문단 피드백 & 가이드 Gate)
     // =========================================================================
 
     doc
     /* System 2(챕터 운영)의 성장 단계 통제(Maturity Gate)와
-     * System 1(LV1 도메인 참조모델 과제)의 무결성 검증(교수님 피드백 3대 원칙 + 실무 가이드 6대 Gate)을
+     * System 1(LV1 도메인 참조모델 과제)의 무결성 검증(학술자문단 피드백 원칙 + 실무 가이드 Gate)을
      * 수행하는 품질 보증 패키지.
+     *
+     * 이 패키지는 LV2/LV1을 import하지 않는다. LV2는 이 패키지의 정의(def)와 임계값을 import해서 쓴다.
      */
 
     // ---------------------------------------------------------------------
-    // 3.1 [교수님 피드백 1·2·3 반영] 학술 자문단 3대 핵심 모델링 검증 규칙
+    // 3.0 공통 타입
     // ---------------------------------------------------------------------
-    constraint def Feedback1_MissionAchievementConOpsRule {
-        doc
-        /* [교수님 피드백 1]
-         * 운용 개념(ConOps)은 단순 기능 나열이 아니라 대상시스템(SoI)의 존재 목적(임무 또는 사업목표)을
-         * 달성하는 모습을 표현해야 하며, 시나리오 수행 결과가 임무 요구사항을 satisfy해야 함.
-         */
-        attribute expressesMissionAndBusinessGoal : Boolean;
-        attribute hasExplicitSatisfyLinkToMission : Boolean;
-        expressesMissionAndBusinessGoal and hasExplicitSatisfyLinkToMission
+    enum def SEAssignmentStageKind {
+        stage1_SoIAndQuestionSelection; // 과제 1: 대상시스템(SoI) 및 Engineering Question 선정
+        stage2_BlackBoxAndConOps; // 과제 2: 블랙박스 정의, 임무/MOE 설정 및 5-Tuple ConOps 시나리오
+        stage3_LogicalArchitecture; // 과제 3: 화이트박스 논리 아키텍처 및 기능 분해/할당
+        stage4_PhysicalAndSimulation; // 과제 4: 물리 아키텍처, 요구사항 추적성 및 시뮬레이션 검증(V&V)
     }
 
-    constraint def Feedback2_QuantitativeMOEStructureRule {
+    abstract constraint def AssignmentCheckpointRule {
         doc
-        /* [교수님 피드백 2]
-         * 임무/사업 목표에 대한 서술(What/Why)과 함께, 달성 여부를 판정하는
-         * 운용효과성측정지표(MOE)를 정의하고 반드시 목표값(Target), 한계값(Threshold), 단위(Unit)를
-         * 지정해야 함 (수치 자체의 정확성보다 정량적 구조 완결성이 필수).
+        /* 과제 통과 필수 요건(ModelingAssignment.mandatoryCheckpoints)으로 참조되는 모든 Feedback/Gate 규칙의 공통 상위 정의.
+         * 새 규칙을 추가할 때는 이 정의를 상속(:>)하면 과제에서 같은 방식으로 참조할 수 있다.
          */
-        attribute hasMissionAndBusinessNarrative : Boolean;
-        attribute hasMOETargetValue : Boolean;
-        attribute hasMOEThresholdValue : Boolean;
-        attribute hasMOEUnit : Boolean;
-        hasMissionAndBusinessNarrative and hasMOETargetValue and hasMOEThresholdValue and hasMOEUnit
-    }
-
-    constraint def Feedback3_BlackBoxAndTimeframeInfraRule {
-        doc
-        /* [교수님 피드백 3]
-         * 운용 시나리오 작성 시 블랙박스 개념을 철저히 유지하여 블랙박스 대상시스템이 외부 환경과
-         * 상호작용하는 것에 초점을 두어야 하며, 이때 외부 환경에 대한 가정은 반드시
-         * '운용 시점의 인프라에 대한 가정(Timeframe Infrastructure Assumption)'에 기반해야 함.
-         */
-        attribute focusesOnExternalBoundaryInteraction : Boolean;
-        attribute isExternalEnvGroundedInTimeframeInfra : Boolean;
-        focusesOnExternalBoundaryInteraction and isExternalEnvGroundedInTimeframeInfra
     }
 
     // ---------------------------------------------------------------------
-    // 3.2 [실무 가이드 7장 반영] 과제 산출물 6대 자체 감사 게이트 (Verification Gates)
+    // 3.1 학술자문단 핵심 모델링 검증 규칙 (Feedback)
     // ---------------------------------------------------------------------
-    constraint def Gate1_WholeSystemScopeRule {
+    constraint def Feedback1_MissionAchievementConOpsRule :> AssignmentCheckpointRule {
+        doc
+        /* [Feedback 1: 임무 달성 중심 ConOps]
+         * 단순 기능 나열이 아닌, 대상시스템(SoI)이 이해관계자의 최상위 임무(Mission)를
+         * 달성하는 종단간(End-to-End) 운용 시나리오(ConOps)로 구성되었는가?
+         * 운용 개념은 대상시스템의 존재목적(임무 또는 사업목표) 달성을 표현하고 satisfy 관계로 연결해야 한다.
+         */
+        in isMissionOrientedConOps : Boolean;
+        in hasEndToEndScenarioFlow : Boolean;
+        isMissionOrientedConOps and hasEndToEndScenarioFlow
+    }
+
+    constraint def Feedback2_QuantitativeMOEStructureRule :> AssignmentCheckpointRule {
+        doc
+        /* [Feedback 2: 정량적 MOE/MOP 체계]
+         * 모호한 형용사(빠르게, 안전하게 등)가 배제되고, 이해관계자 효과성 척도(MOE)와
+         * 블랙박스 시스템 성능 척도(MOP)가 정량적 수치 및 단위로 구조화되었는가?
+         * MOE는 고객/임무/공장 효과 중심의 계층 구조로 정의하고 목표값(Target)/한계값(Threshold)/단위(Unit)를 지정해야 한다.
+         */
+        attribute minMoeCount : Integer = 1;
+        in moeCount : Integer;
+        in hasQuantitativeMOEAndMOP : Boolean;
+        in isFreeOfVagueAdjectives : Boolean;
+        moeCount >= minMoeCount and hasQuantitativeMOEAndMOP and isFreeOfVagueAdjectives
+    }
+
+    constraint def Feedback3_BlackBoxAndTimeframeInfraRule :> AssignmentCheckpointRule {
+        doc
+        /* [Feedback 3: 블랙박스 순수성 및 운용 시점 인프라 정합성]
+         * 내부 구현 기술(White-Box) 유출 없이 외부 인프라 및 운용 시점(Timeframe) 전제가
+         * 컨텍스트 및 시나리오와 일관되게 연결되었는가?
+         * 운용 시점의 PESTEL-CTIMMRA 인프라 가정을 명시하고, 블랙박스 SoI가 외부 환경(조직/물리/자연)과
+         * 상호작용하는 것에 초점을 두고 시나리오를 작성해야 한다.
+         */
+        in isBlackBoxContextConsistent : Boolean;
+        in isTimeframeInfraLinked : Boolean;
+        isBlackBoxContextConsistent and isTimeframeInfraLinked
+    }
+
+    // ---------------------------------------------------------------------
+    // 3.2 과제 산출물 자체 감사 게이트 (Verification Gates)
+    // ---------------------------------------------------------------------
+    constraint def Gate1_WholeSystemScopeRule :> AssignmentCheckpointRule {
         doc
         /* [Gate 1: Whole-System]
          * 대상시스템(SoI)이 하위 모듈/센서/단일 제어기가 아닌, 독립적으로 이해관계자에게
          * 임무를 완수할 수 있는 최상위 전체 시스템(Whole-System)으로 선정되었는가?
          */
-        attribute isIndependentWholeSystem : Boolean;
+        in isIndependentWholeSystem : Boolean;
         isIndependentWholeSystem
     }
 
-    constraint def Gate2_BlackBoxSolutionFreeRule {
+    constraint def Gate2_BlackBoxSolutionFreeRule :> AssignmentCheckpointRule {
         doc
         /* [Gate 2: Black-Box (Solution-Free 원칙)]
          * 내부 아키텍처(특정 MCU, ECU, SW 함수, 내부 통신 버스 규격, 알고리즘)가 철저히 배제되고
          * 경계면의 입출력(Port/Item)만 노출되었는가?
          */
-        attribute hasZeroInternalComponentsExposed : Boolean;
+        in hasZeroInternalComponentsExposed : Boolean;
         hasZeroInternalComponentsExposed
     }
 
-    constraint def Gate3_TimeframeAssumptionLinkRule {
+    constraint def Gate3_TimeframeAssumptionLinkRule :> AssignmentCheckpointRule {
         doc
         /* [Gate 3: 시점 전제 연계]
-         * 단순 연도 텍스트 기재를 넘어, 운용 시점(예: 2030~2040년)의 4대 전제 조건
+         * 단순 연도 텍스트 기재를 넘어, 운용 시점(예: 2030~2040년)의 전제 조건
          * (①외부 인프라 성숙도, ②법규/제도, ③위협/외란 수준, ④수명주기 진화 특성)이 반영되었는가?
          */
-        attribute hasFourCategoryTimeframeAssumptions : Boolean;
+        in hasFourCategoryTimeframeAssumptions : Boolean;
         hasFourCategoryTimeframeAssumptions
     }
 
-    constraint def Gate4_ODDSpatialGroupingRule {
+    constraint def Gate4_ODDSpatialGroupingRule :> AssignmentCheckpointRule {
         doc
         /* [Gate 4: 장소 그룹핑]
          * 무분별한 개별 지명 나열 대신, 물리적·기능적 부하(Stress)의 동질성을 기준으로
          * 그룹 A(공칭/정규), 그룹 B(복합/고부하), 그룹 C(극한/기능저하)로 추상화되었는가?
          */
-        attribute hasThreeTierODDGrouping : Boolean;
+        in hasThreeTierODDGrouping : Boolean;
         hasThreeTierODDGrouping
     }
 
-    constraint def Gate5_ThreeExternalScopesCompletenessRule {
+    constraint def Gate5_ThreeExternalScopesCompletenessRule :> AssignmentCheckpointRule {
         doc
-        /* [Gate 5: 3대 범위 완전성 및 외란 아이템화]
-         * 외부 조직(Org), 외부 물리 시스템(Physical), 외부 자연 환경(Nature)이 각각 2개 이상 식별되었으며,
+        /* [Gate 5: 외부 범위 완전성 및 외란 아이템화]
+         * 외부 조직(Org), 외부 물리 시스템(Physical), 외부 자연 환경(Nature)이 각각 최소 개수 이상 식별되었으며,
          * 자연 환경 외란이 문학적 묘사가 아닌 EnvironmentalDisturbanceItem으로 정형화되었는가?
+         * 최소 개수는 minActorCountPerScope 한 곳에서만 정의한다.
          */
-        attribute externalOrgCount : Integer;
-        attribute externalPhysicalCount : Integer;
-        attribute externalNatureCount : Integer;
-        attribute isNaturalDisturbanceItemized : Boolean;
+        attribute minActorCountPerScope : Integer = 2;
+        in externalOrgCount : Integer;
+        in externalPhysicalCount : Integer;
+        in externalNatureCount : Integer;
+        in isNaturalDisturbanceItemized : Boolean;
 
-        externalOrgCount >= 2 and
-        externalPhysicalCount >= 2 and
-        externalNatureCount >= 2 and
+        externalOrgCount >= minActorCountPerScope and
+        externalPhysicalCount >= minActorCountPerScope and
+        externalNatureCount >= minActorCountPerScope and
         isNaturalDisturbanceItemized
     }
 
-    constraint def Gate6_NoIsolatedActorTraceabilityRule {
+    constraint def Gate6_NoIsolatedActorTraceabilityRule :> AssignmentCheckpointRule {
         doc
         /* [Gate 6: 고립 액터 방지 (Traceability 강제)]
          * 컨텍스트에 정의된 모든 외부 액터(조직/물리/자연)와 시점·장소 그룹이
          * 최종 5-Tuple 운용 시나리오(공칭 + 외란 적응 + 비상 폴백/MRC)에 최소 1회 이상 등장하는가?
          */
-        attribute hasZeroIsolatedExternalActors : Boolean;
-        attribute includesNominalDisturbanceAndMRCFlows : Boolean;
+        in hasZeroIsolatedExternalActors : Boolean;
+        in includesNominalDisturbanceAndMRCFlows : Boolean;
         hasZeroIsolatedExternalActors and includesNominalDisturbanceAndMRCFlows
     }
 
     // ---------------------------------------------------------------------
-    // 3.3 LV1 참조모델 과제 통합 승인 게이트 (교수님 피드백 3종 + 가이드 Gate 6종 통합)
+    // 3.3 LV1 참조모델 과제 통합 승인 게이트 (Feedback + Gate 통합)
     // ---------------------------------------------------------------------
-    constraint def ReferenceModelAssignmentApprovalGate {
+    attribute def AssignmentGateChecklist {
         doc
-        /* 워킹그룹이 제출한 LV1 모델이 KnowledgeRepository에 정식 Baseline으로 승격되기 위한 통합 품질 게이트 */
-        in passFb1 : Boolean;
-        in passFb2 : Boolean;
-        in passFb3 : Boolean;
-        in passG1 : Boolean;
-        in passG2 : Boolean;
-        in passG3 : Boolean;
-        in passG4 : Boolean;
-        in passG5 : Boolean;
-        in passG6 : Boolean;
+        /* 통합 승인 게이트(ReferenceModelAssignmentApprovalGate)의 입력 전체를 속성별로 분리해 담는 체크리스트.
+         * 속성 이름은 각 Feedback/Gate constraint def의 파라미터 이름과 같다.
+         * 각 항목은 개별 속성이므로 하나의 판정값을 여러 파라미터에 중복 입력하는 정보 손실이 없다.
+         */
+        // Feedback 1
+        attribute isMissionOrientedConOps : Boolean default false;
+        attribute hasEndToEndScenarioFlow : Boolean default false;
+        // Feedback 2
+        attribute moeCount : Integer default 0;
+        attribute hasQuantitativeMOEAndMOP : Boolean default false;
+        attribute isFreeOfVagueAdjectives : Boolean default false;
+        // Feedback 3
+        attribute isBlackBoxContextConsistent : Boolean default false;
+        attribute isTimeframeInfraLinked : Boolean default false;
+        // Gate 1 ~ 4
+        attribute isIndependentWholeSystem : Boolean default false;
+        attribute hasZeroInternalComponentsExposed : Boolean default false;
+        attribute hasFourCategoryTimeframeAssumptions : Boolean default false;
+        attribute hasThreeTierODDGrouping : Boolean default false;
+        // Gate 5
+        attribute externalOrgCount : Integer default 0;
+        attribute externalPhysicalCount : Integer default 0;
+        attribute externalNatureCount : Integer default 0;
+        attribute isNaturalDisturbanceItemized : Boolean default false;
+        // Gate 6
+        attribute hasZeroIsolatedExternalActors : Boolean default false;
+        attribute includesNominalDisturbanceAndMRCFlows : Boolean default false;
+    }
 
-        constraint fb1 : Feedback1_MissionAchievementConOpsRule;
-        constraint fb2 : Feedback2_QuantitativeMOEStructureRule;
-        constraint fb3 : Feedback3_BlackBoxAndTimeframeInfraRule;
+    constraint def ReferenceModelAssignmentApprovalGate :> AssignmentCheckpointRule {
+        doc
+        /* 워킹그룹이 제출한 LV1 모델이 KnowledgeRepository에 정식 Baseline으로 승격되기 위한 통합 품질 게이트.
+         * 입력은 checklist 하나이며, 판정 기준 설명은 각 Feedback/Gate constraint def의 doc에만 둔다.
+         */
+        in checklist : AssignmentGateChecklist;
 
-        constraint gate1 : Gate1_WholeSystemScopeRule { :>> isIndependentWholeSystem = passG1; }
-        constraint gate2 : Gate2_BlackBoxSolutionFreeRule { :>> hasZeroInternalComponentsExposed = passG2; }
-        constraint gate3 : Gate3_TimeframeAssumptionLinkRule { :>> hasFourCategoryTimeframeAssumptions = passG3; }
-        constraint gate4 : Gate4_ODDSpatialGroupingRule { :>> hasThreeTierODDGrouping = passG4; }
-        constraint gate5 : Gate5_ThreeExternalScopesCompletenessRule;
-        constraint gate6 : Gate6_NoIsolatedActorTraceabilityRule;
+        constraint fb1 : Feedback1_MissionAchievementConOpsRule {
+            in :>> isMissionOrientedConOps = checklist.isMissionOrientedConOps;
+            in :>> hasEndToEndScenarioFlow = checklist.hasEndToEndScenarioFlow;
+        }
+        constraint fb2 : Feedback2_QuantitativeMOEStructureRule {
+            in :>> moeCount = checklist.moeCount;
+            in :>> hasQuantitativeMOEAndMOP = checklist.hasQuantitativeMOEAndMOP;
+            in :>> isFreeOfVagueAdjectives = checklist.isFreeOfVagueAdjectives;
+        }
+        constraint fb3 : Feedback3_BlackBoxAndTimeframeInfraRule {
+            in :>> isBlackBoxContextConsistent = checklist.isBlackBoxContextConsistent;
+            in :>> isTimeframeInfraLinked = checklist.isTimeframeInfraLinked;
+        }
 
-        passFb1 and passFb2 and passFb3 and passG1 and passG2 and passG3 and passG4 and passG5 and passG6
+        constraint gate1 : Gate1_WholeSystemScopeRule {
+            in :>> isIndependentWholeSystem = checklist.isIndependentWholeSystem;
+        }
+        constraint gate2 : Gate2_BlackBoxSolutionFreeRule {
+            in :>> hasZeroInternalComponentsExposed = checklist.hasZeroInternalComponentsExposed;
+        }
+        constraint gate3 : Gate3_TimeframeAssumptionLinkRule {
+            in :>> hasFourCategoryTimeframeAssumptions = checklist.hasFourCategoryTimeframeAssumptions;
+        }
+        constraint gate4 : Gate4_ODDSpatialGroupingRule {
+            in :>> hasThreeTierODDGrouping = checklist.hasThreeTierODDGrouping;
+        }
+        constraint gate5 : Gate5_ThreeExternalScopesCompletenessRule {
+            in :>> externalOrgCount = checklist.externalOrgCount;
+            in :>> externalPhysicalCount = checklist.externalPhysicalCount;
+            in :>> externalNatureCount = checklist.externalNatureCount;
+            in :>> isNaturalDisturbanceItemized = checklist.isNaturalDisturbanceItemized;
+        }
+        constraint gate6 : Gate6_NoIsolatedActorTraceabilityRule {
+            in :>> hasZeroIsolatedExternalActors = checklist.hasZeroIsolatedExternalActors;
+            in :>> includesNominalDisturbanceAndMRCFlows =
+                checklist.includesNominalDisturbanceAndMRCFlows;
+        }
+
+        // 통합 판정식: 하위 constraint usage 자체를 AND 연산으로 평가
+        fb1 and fb2 and fb3 and gate1 and gate2 and gate3 and gate4 and gate5 and gate6
     }
 
     // ---------------------------------------------------------------------
-    // 3.4 모델 검수 및 승인 프로세스 (학술 자문단 리뷰 및 6대 Gate 검증 반영)
+    // 3.4 모델 검수 및 승인 프로세스 (WG Lead → 학술자문단 → 챕터 리더십)
     // ---------------------------------------------------------------------
     action def ModelReviewProcess {
         doc
-        /* 정기적인 챕터 모델 및 LV1 과제 산출물 검수·승인 워크플로우 */
+        /* 정기적인 챕터 모델 및 LV1 과제 산출물 검수·승인 워크플로우.
+         * 검토 순서는 ModelingConventions::VersionControlPolicy(WG Lead → 학술자문단 → 보안/형상 승인)와 같다.
+         * 게이트 미통과 또는 자문단 미승인이면 reviseModel(SubmissionStatusKind::revisionRequired에 해당)을 거쳐 재제출한다.
+         */
+        in attribute submittedChecklist : AssignmentGateChecklist;
+        in attribute isAdvisorApproved : Boolean default false;
+
+        constraint gateEvaluation : ReferenceModelAssignmentApprovalGate {
+            in :>> checklist = submittedChecklist;
+        }
+
         action submitModelUpdate {
             doc
             /* 워킹그룹 또는 회원이 스캐폴드 기반 모델 제출 */
         }
         action checkAutomatedConventionsAndGates {
             doc
-            /* 6대 자체 감사 게이트(Gate 1~6) 및 스캐폴드 상속·포트 대칭성 1차 점검 */
+            /* 가이드 Gate 및 스캐폴드 상속·포트 대칭성 1차 점검 */
+        }
+        action reviewByWGLead {
+            doc
+            /* 워킹그룹 리드(WG Lead)의 1차 모델 검토 */
         }
         action reviewByAcademicAdvisors {
             doc
-            /* 교수진 자문단(이중윤·서은석 교수)의 피드백 1·2·3 충족 여부 심사 */
+            /* 학술자문단의 피드백 1·2·3 충족 여부 심사 */
         }
         action reviewByChapterLeadership {
             doc
@@ -600,36 +785,118 @@ package QualityGatesAndReviewProcess {
             doc
             /* GitHub 메인 브랜치 및 Google Workspace 단일 진실 공급원(SSOT) 배포 */
         }
+        action reviseModel {
+            doc
+            /* 게이트 미통과 또는 자문단 지적 사항을 반영하는 재작업 */
+        }
 
-        first submitModelUpdate;
+        first start;
+        then submitModelUpdate;
         then checkAutomatedConventionsAndGates;
-        then reviewByAcademicAdvisors;
-        then reviewByChapterLeadership;
-        then mergeAndDeploy;
+        then gateDecision;
+
+        // TODO(확인 필요): decide/if/else 분기 문법은 Syside 0.10.x 에서 check 통과를 확인했으나,
+        //   gateEvaluation.result 를 가드로 쓰는 실행 의미(시뮬레이션)는 확인하지 못했다.
+        decide gateDecision;
+            if gateEvaluation.result then reviewByWGLead;
+            else reviseModel;
+
+        first reviewByWGLead then reviewByAcademicAdvisors;
+        first reviewByAcademicAdvisors then advisorDecision;
+
+        decide advisorDecision;
+            if isAdvisorApproved then reviewByChapterLeadership;
+            else reviseModel;
+
+        first reviewByChapterLeadership then mergeAndDeploy;
+        first mergeAndDeploy then done;
+        first reviseModel then submitModelUpdate;
     }
 
     // ---------------------------------------------------------------------
     // 3.5 System 2 (챕터 조직) 성장 단계 전환 조건 (Maturity Gate)
     // ---------------------------------------------------------------------
-    constraint def PhaseTransitionGateCondition {
+    attribute def MaturityGateThresholds {
+        doc
+        /* Phase 전환 조건의 임계값 묶음. 모든 값은 '이상(>=)' 최소값이다. */
+        attribute presentations : Integer;
+        attribute refModels : Integer;
+        attribute aiSkills : Integer;
+        attribute activeMembers : Integer;
+        attribute sepMembers : Integer;
+    }
+
+    // Phase 임계값의 단일 정의 위치. 판정식과 doc은 숫자를 다시 적지 않고 이 값을 참조한다.
+    attribute phase1To2Thresholds : MaturityGateThresholds {
+        :>> presentations = 10;
+        :>> refModels = 3;
+        :>> aiSkills = 3;
+        :>> activeMembers = 16; // 정원 '15명 초과'를 정수 최소값으로 표현
+        :>> sepMembers = 3;
+    }
+
+    attribute phase2To3Thresholds : MaturityGateThresholds {
+        :>> presentations = 0; // Phase 2 -> 3 판정식에서는 사용하지 않음
+        :>> refModels = 3;
+        :>> aiSkills = 5;
+        :>> activeMembers = 30;
+        :>> sepMembers = 10;
+    }
+
+    abstract constraint def PhaseTransitionGateCondition {
         doc
         /* 조직 성장 조건 (Maturity Gate):
          * LV1 참조모델 승인 누적 건수 및 세미나 발표 건수 등 정량적 지표를 기반으로
-         * System 2(KoreaChapter)의 Lifecycle Phase 전환 가능 여부를 판정함.
+         * System 2(KoreaChapter)의 Lifecycle Phase 전환 가능 여부를 판정하는 공통 입력 정의.
+         * 구체 판정식과 임계값은 하위 constraint def(Phase1ToPhase2GateConstraint 등)와
+         * MaturityGateThresholds 값에만 존재한다.
          */
         in presentations : Integer;
         in refModels : Integer;
         in aiSkills : Integer;
         in activeMembers : Integer;
         in sepMembers : Integer;
+        in thresholds : MaturityGateThresholds;
+    }
+
+    // ---- Phase 1 -> Phase 2 전환 게이트 (온라인 스터디 -> 오프라인 세미나 정례화) ----
+    constraint def Phase1ToPhase2GateConstraint :> PhaseTransitionGateCondition {
+        doc
+        /* [Phase 1 -> Phase 2 전환 조건 (기업 스폰서 조건 제외)]
+         * 판정식: (발표/사례 자료 OR 고정 활동 인원 중 하나) AND 참조모델 AND AI Skills AND SEP 보유 인원.
+         * 임계값은 phase1To2Thresholds 를 참조한다.
+         */
+        in :>> thresholds : MaturityGateThresholds default phase1To2Thresholds;
+
+        (presentations >= thresholds.presentations or activeMembers >= thresholds.activeMembers) and
+        refModels >= thresholds.refModels and
+        aiSkills >= thresholds.aiSkills and
+        sepMembers >= thresholds.sepMembers
+    }
+
+    // ---- Phase 2 -> Phase 3 전환 게이트 (세미나 정례화 -> 공식 WG 및 학회 Joint WG) ----
+    constraint def Phase2ToPhase3GateConstraint :> PhaseTransitionGateCondition {
+        doc
+        /* [Phase 2 -> Phase 3 전환 조건 (기업 스폰서 조건 제외)]
+         * 판정식: 고정 활동 인원 AND SEP 자격 보유자 AND AI Skills AND 참조모델 유지.
+         * 임계값은 phase2To3Thresholds 를 참조한다.
+         */
+        in :>> thresholds : MaturityGateThresholds default phase2To3Thresholds;
+
+        activeMembers >= thresholds.activeMembers and
+        sepMembers >= thresholds.sepMembers and
+        aiSkills >= thresholds.aiSkills and
+        refModels >= thresholds.refModels
     }
 } // package QualityGatesAndReviewProcess
 
 ##1_ASELCM_LV3_Governance/3_GovernanceSystemAndTooling.sysml##
 package GovernanceSystemAndTooling {
-    private import ModelingConventionsAndPolicies::*;
+    private import ModelingConventionsAndPolicies::ModelingConventions::*;
+    private import ModelingConventionsAndPolicies::PolicyAndDirectives::*;
     private import QualityGatesAndReviewProcess::*;
     private import ScalarValues::*;
+
     // =========================================================================
     // 4. Tooling Ecosystem (도구 사슬 및 IT 환경)
     // =========================================================================
@@ -649,7 +916,7 @@ package GovernanceSystemAndTooling {
 
         part def SimulationAndCodeGenPipeline {
             doc
-            /* [ChapterObjective 3번 연계]
+            /* [ChapterObjective 연계]
              * SysML v2 모델로부터 MILS/SILS/HILS 시뮬레이션 및 Simulink 오토코드 제너레이션까지
              * End-to-End 추적성을 검증하는 도구 사슬.
              */
@@ -657,15 +924,17 @@ package GovernanceSystemAndTooling {
     } // package ToolingEcosystem
 
     // =========================================================================
-    // 5. Governance System (System 3 실체 및 통제 인터페이스)
+    // 5-a. Governance Interfaces (System 3 <-> System 2/1 교환 아이템과 포트 정의)
     // =========================================================================
-    // 거버넌스 포트 교환 아이템 정의
-    package GovernanceSystem {
+    package GovernanceInterfaces {
+        doc
+        /* LV3가 정의하는 인터페이스. LV2는 이 포트의 켤레(~GovernanceInterfacePort)를 사용해 연결한다. */
+
         item def GovernancePolicyDirectiveItem {
             doc
-            /* System 3 -> System 2 & System 1: 모델링 규약, 스캐폴드 상속 지침, 보안 규정, 6대 Gate 기준 */
+            /* System 3 -> System 2 & System 1: 모델링 규약, 스캐폴드 상속 지침, 보안 규정, Gate 기준 */
             attribute policyVersion : String;
-            attribute targetAssignmentStage : String;
+            attribute targetAssignmentStage : SEAssignmentStageKind;
         }
 
         item def ChapterComplianceAndMetricsItem {
@@ -676,45 +945,57 @@ package GovernanceSystemAndTooling {
             attribute currentApprovedModelsCount : Integer;
         }
 
-        part def GovernanceSystem {
+        port def GovernanceInterfacePort {
+            doc
+            /* System 3 기준 포트. 정책은 내보내고(out), 지표는 받는다(in).
+             * System 2 측은 별도 포트를 중복 정의하지 않고 켤레 포트(~)를 사용한다.
+             */
+            out item policyDirectives : GovernancePolicyDirectiveItem; // 거버넌스 정책(스캐폴드 규약, 피드백 기준, 검증 게이트, 보안 규칙)을 하달
+            in item chapterOperationalMetrics : ChapterComplianceAndMetricsItem; // LV1 과제 게이트 통과 여부 및 LV2 운영 지표를 수집
+        }
+    } // package GovernanceInterfaces
+
+    // =========================================================================
+    // 5-b. Governance System (System 3 실체)
+    // =========================================================================
+    package GovernanceSystem {
+        private import GovernanceInterfaces::*;
+        private import ToolingEcosystem::*;
+
+        part def GovernanceSystemContext {
             doc
             /* System 2(KoreaChapter)와 System 1(LV1 참조모델)을 감싸고 통제하는 System 3의 최상위 컨텍스트.
-             * 거버넌스 규칙과 품질 게이트(교수님 피드백 + 6대 Gate)를 하달하고(out),
+             * 거버넌스 규칙과 품질 게이트(학술자문단 피드백 + 가이드 Gate)를 하달하고(out),
              * 규정 준수 상태 및 과제 검증 결과를 수집(in)하여 승인 및 조직 성장(Maturity Gate)을 통제함.
              */
 
             // 1) 모델링 규약 및 스캐폴드 상속 원칙
-            constraint namingConventions : ModelingConventions::NamingConventionRule [1..*];
-            constraint vcsPolicy : ModelingConventions::VersionControlPolicy;
-            constraint scaffoldRule : ModelingConventions::ScaffoldInheritanceRule;
+            constraint namingConventions : NamingConventionRule [1..*];
+            constraint vcsPolicy : VersionControlPolicy;
+            constraint scaffoldRule : ScaffoldInheritanceRule;
 
-            // 2) 글로벌 정책, 국제 SE 표준 및 기업 보안 규정
-            requirement sectorDirectives : PolicyAndDirectives::SectorComplianceRule [1..*];
-            requirement standardPolicy : PolicyAndDirectives::SEStandardAlignmentPolicy;
-            requirement securityPolicy : PolicyAndDirectives::EnterpriseSecurityAndIPPolicy;
+            // 2) 글로벌 정책, 국제 SE 표준, 도구 라이선스 및 기업 보안 규정
+            requirement sectorDirectives : SectorComplianceRule [1..*];
+            requirement standardPolicy : SEStandardAlignmentPolicy;
+            requirement toolLicensePolicy : ToolLicensePolicy;
+            requirement securityPolicy : EnterpriseSecurityAndIPPolicy;
 
-            // 3) 품질 보증 프로세스 및 게이트 (교수님 피드백 3종 + 가이드 6대 Gate + 챕터 성장 Gate)
+            // 3) 품질 보증 프로세스 및 게이트 (학술자문단 피드백 + 가이드 Gate + 챕터 성장 Gate)
             perform action qaProcess : ModelReviewProcess;
             constraint lv1AssignmentGate : ReferenceModelAssignmentApprovalGate;
-            constraint chapterMaturityGate : PhaseTransitionGateCondition;
+
+            // 챕터 성장 Gate: 구체 게이트만 usage로 두고, 임계값은 MaturityGateThresholds 한 곳에서 가져온다.
+            constraint chapterMaturityGate : PhaseTransitionGateCondition [1..*];
+            constraint phase1To2Gate : Phase1ToPhase2GateConstraint :> chapterMaturityGate;
+            constraint phase2To3Gate : Phase2ToPhase3GateConstraint :> chapterMaturityGate;
 
             // 4) 도구 생태계 인프라
-            part repositoryServer : ToolingEcosystem::ModelRepositoryServer;
-            part visualizer : ToolingEcosystem::VisualizationEngine;
-            part simPipeline : ToolingEcosystem::SimulationAndCodeGenPipeline [0..1];
+            part repositoryServer : ModelRepositoryServer;
+            part visualizer : VisualizationEngine;
+            part simPipeline : SimulationAndCodeGenPipeline [0..1];
 
             // System 2(KoreaChapter) 및 System 1(LV1 Models)을 통제하기 위한 인터페이스 포트
-            port governanceControlPort {
-                doc
-                /* 거버넌스 정책(스캐폴드 규약, 교수님 피드백 기준, 6대 검증 게이트, 보안 규칙)을 하달 */
-                out item policyDirectives : GovernancePolicyDirectiveItem;
-            }
-
-            port complianceMonitoringPort {
-                doc
-                /* LV1 과제 게이트 통과 여부 및 LV2 운영 지표를 수집하여 Baseline 승인 및 Phase 전환 심사 */
-                in item chapterOperationalMetrics : ChapterComplianceAndMetricsItem;
-            }
+            port governanceInterface : GovernanceInterfacePort;
         }
     } // package GovernanceSystem
 } // package GovernanceSystemAndTooling
@@ -724,16 +1005,20 @@ package ChapterObjectives {
     doc
     /* [목표(Goal) 뷰포인트]
      * INCOSE Korea Chapter 프로젝트가 존재하는 근본적인 이유를 정의한다.
-     * 어떤 문제(Problem Statement)를 풀기 위해 어떤 시스템 아이디어(System Idea)를 
+     * 어떤 문제(Problem Statement)를 풀기 위해 어떤 시스템 아이디어(System Idea)를
      * 제안하는지를 최상위 요구사항 계층으로 표현한다.
      */
 
+    private import ScalarValues::*;
+    private import QualityGatesAndReviewProcess::*;
+    private import ChapterSystemContext::*;
+
     requirement def Objective {
         doc
-        /* 프로젝트의 근본적인 문제 정의(Problem Statement), 
-         * 시스템 아이디어(System Idea), 
-         * 그리고 비즈니스 목표를 모델링하는 최상위 요구사항 타입
+        /* 프로젝트의 근본적인 문제 해결 목적과 시스템 아이디어를 모델링하는 최상위 요구사항 타입.
+         * 모든 Objective는 챕터(KoreaChapter)를 subject로 가진다.
          */
+        subject chapter : KoreaChapter;
     }
 
     // ==========================================
@@ -745,17 +1030,30 @@ package ChapterObjectives {
          * 2. 산업계 실무자들이 현업에 즉시 적용하고 활용할 수 있는 구체적이고 실용적인 도메인별(자동차, 우주 등) 시스템 엔지니어링 레퍼런스 모델(창조 모델)을 공동으로 개발한다.
          * 3. (선택적 목표) SysML v2에 관심이 있는 회원들의 경우, SysML v2의 Formal Language 특성을 활용해 요구사항 설계부터 시뮬링크(Simulink) 등을 통한 오토코드 제너레이션까지 이어지는 End-to-End 추적성을 구현하고, 이를 통해 SE의 실효성을 리더십과 경영진에게 시각적으로 입증하는 것을 세부 목표로 삼는다.
          */
+        // 목적 2의 정형화: 목표 참조모델 수는 Phase 1 -> 2 임계값과 같은 기준을 쓴다(숫자 재정의 금지).
+        attribute targetReferenceModelCount : Integer = phase1To2Thresholds.refModels;
+        // 목적 3(선택적 목표)의 달성 여부
+        attribute isEndToEndTraceabilityDemonstrated : Boolean default false;
+
+        require constraint referenceModelsDelivered {
+            chapter.completedReferenceModelsCount >= targetReferenceModelCount
+        }
     }
 
     // ==========================================
     // 2. Problem Statement (문제 정의)
     // ==========================================
-    requirement def ChapterProblemStatement :> Objective {
+    requirement def ChapterProblemStatement {
         doc
         /* 1. 전 세계적으로 시스템 엔지니어링의 중요성과 관련 인구가 증가하는 추세와 달리, 국내 SE 전문 인력은 지속적으로 감소하는 구조적인 역행을 겪고 있다.
          * 2. 국내 인력 감소와 SE 적용 실패의 근본적인 원인은 교육을 이수하더라도 "실무에서 직접적인 효과를 체감하지 못한다"는 점과, 업무에 적용하려 해도 참고할 만한 '구체적이고 실용적인 레퍼런스'가 철저히 부재하다는 데 있다.
          * 3. 실제 자동차 전장 및 에어 서스펜션 등 현업에서는 다수의 국제 표준(ISO 26262, ASPICE, 사이버시큐리티 등) 준수를 위해 SE 방법론이 강제되나, 아키텍처 및 요구사항 문서가 최종 제품의 품질 향상과 연결되지 못하고 '보여주기식 요식 행위'로 전락하여 프로젝트마다 기술적 부채가 누적되는 악순환이 반복되고 있다.
          */
+        // 문제 정의는 해결책(솔루션)을 포함하지 않아야 한다(ISO 15288: 문제 공간과 해결 공간의 분리).
+        subject chapter : KoreaChapter;
+        attribute isSolutionFree : Boolean;
+
+        require constraint problemSpaceSeparated { isSolutionFree }
     }
 
     // ================================================
@@ -767,7 +1065,19 @@ package ChapterObjectives {
          * 2. 자동차 도메인의 SDV(Software Defined Vehicle) 전체 관점과 우주 도메인의 미션 시스템 전체를 대상으로 삼아, 운영자 요구사항(Operational Stakeholder Requirement)부터 소프트웨어 코드 자동 생성까지 완벽하게 이어지는 SysML v2 기반의 엔드투엔드(End-to-End) 레퍼런스 모델을 직접 구축한다.
          * 3. 완성된 이 '모범 사례(Best Practice)'를 통해 리더십과 경영진을 설득하고, 성공 사례를 직접 경험한 실무진들이 주변으로 지식을 전파하는 상향식(Bottom-up) 확산을 통해 대한민국이 시스템 엔지니어링 분야의 패스트 무버(Fast Mover)로 도약하는 핵심 엔진 역할을 수행한다.
          */
+        attribute coversOperationalRequirementToCodeGeneration : Boolean;
+
+        require constraint endToEndScope { coversOperationalRequirementToCodeGeneration }
     }
+
+    // ==========================================
+    // 4. Objective Usage 및 추적성 (챕터가 목적을 만족)
+    // ==========================================
+    // Objective 만족 관계: 'satisfy ... by chapter' 가 requirement의 subject(chapter)를 incoseKoreaChapterContext.chapter 로 바인딩한다.
+    // (usage에서 'subject chapter = ...' 를 따로 바인딩하면 satisfy의 바인딩과 충돌하므로(feature-value-overriding) 한 곳에서만 지정한다.)
+    requirement chapterObjective : ChapterObjective;
+
+    satisfy chapterObjective by incoseKoreaChapterContext.chapter;
 } // package ChapterObjectives
 
 ##2_ASELCM LV2_Chapter_Organization/1_Strategy_and_Metrics/2_ChapterMetricsAndGuards.sysml##
@@ -775,70 +1085,53 @@ package ChapterMetricsAndGuards {
     doc
     /* [MagicGrid: Measures of Effectiveness (MoEs) & System Parameters]
      * 기업 스폰서 등 외부 환경 변수를 배제하고, 챕터 내부의 산출물과 인적 역량만으로
-     * 성장을 측정 및 통제하는 5대 핵심 성과 지표(Core MoEs)와 Gate 제약 수식 정의.
+     * 성장을 측정 및 통제하는 핵심 성과 지표(Core MoEs)와 Phase 전환 판정 결과.
+     *
+     * 판정식과 임계값은 LV3(QualityGatesAndReviewProcess)가 한 곳에서 정의한다.
+     * 이 패키지는 지표 값을 그 constraint의 입력에 연결하고 판정 결과를 파생할 뿐, 숫자를 다시 적지 않는다.
      */
 
     private import ScalarValues::*;
     private import QualityGatesAndReviewProcess::*;
 
-    // =========================================================================
-    // 1. 5대 핵심 성과 지표 홀더 (Core 5 MoEs Holder)
-    // =========================================================================
     part def ChapterMoEsHolder {
         doc
-        /* KoreaChapter(SoI)가 상속받는 5대 핵심 정량 지표(MoEs) */
-
-        attribute accumulatedPresentationsCount : Integer default 1; // MoE 1: 누적 발표/사례 자료 수 (목표 >= 10)
-        attribute completedReferenceModelsCount : Integer default 0; // MoE 2: 완성된 도메인 참조모델 수 (목표 >= 3)
-        attribute developedAISkillsCount : Integer default 0; // MoE 3: 단계별 AI Skills 수 (Phase2 >= 3, Phase3 >= 5)
-        attribute regularActiveMembersCount : Integer default 12; // MoE 4: 고정 활동 인원 수 (Phase2 > 15, Phase3 >= 30)
-        attribute sepCertifiedMembersCount : Integer default 1; // MoE 5: SEP 자격 보유자 수 (Phase2 >= 3, Phase3 >= 10)
-    }
-
-    // =========================================================================
-    // 2. Phase 1 -> Phase 2 전환 게이트 제약 (온라인 스터디 -> 오프라인 세미나 정례화)
-    // =========================================================================
-    constraint def Phase1ToPhase2GateConstraint :> PhaseTransitionGateCondition {
-        doc
-        /* [Phase 1 -> Phase 2 전환 조건 (기업 스폰서 조건 제외)]
-         * 1) 누적 발표/사례 자료 10건 이상 OR 고정 활동 인원 15명 초과
-         * 2) 도메인별 참조모델 3건 이상 완성
-         * 3) 단계별 AI Architecting Skills 3개 이상 구축
-         * 4) INCOSE SEP 자격 보유 인원 3명 이상 확보
+        /* KoreaChapter(SoI)가 상속받는 핵심 정량 지표(MoEs).
+         * 각 지표의 목표 임계값은 QualityGatesAndReviewProcess::phase1To2Thresholds / phase2To3Thresholds 를 참조한다.
          */
-        in :>> presentations : Integer;
-        in :>> refModels : Integer;
-        in :>> aiSkills : Integer;
-        in :>> activeMembers : Integer;
-        in :>> sepMembers : Integer;
 
-        (presentations >= 10 or activeMembers > 15) and
-        refModels >= 3 and
-        aiSkills >= 3 and
-        sepMembers >= 3
-    }
+        attribute accumulatedPresentationsCount : Integer; // MoE: 누적 발표/사례 자료 수 (수동 입력)
+        attribute completedReferenceModelsCount : Integer; // MoE: 완성된 도메인 참조모델 수 (KoreaChapter에서 repository 크기로 파생)
+        attribute developedAISkillsCount : Integer; // MoE: 단계별 AI Skills 수 (KoreaChapter에서 repository 크기로 파생)
+        attribute regularActiveMembersCount : Integer; // MoE: 고정 활동 인원 수 (수동 입력)
+        attribute sepCertifiedMembersCount : Integer; // MoE: SEP 자격 보유자 수 (수동 입력)
 
-    // =========================================================================
-    // 3. Phase 2 -> Phase 3 전환 게이트 제약 (세미나 정례화 -> 공식 WG 및 학회 Joint WG)
-    // =========================================================================
-    constraint def Phase2ToPhase3GateConstraint :> PhaseTransitionGateCondition {
-        doc
-        /* [Phase 2 -> Phase 3 전환 조건 (기업 스폰서 조건 제외)]
-         * 1) 고정 활동 인원 30명 이상 확대 (국내 학회 산하 Joint WG 연계 기준)
-         * 2) INCOSE SEP(CSEP 등) 자격 보유자 10명 이상 확보 (자체 아키텍트 인증 프로그램 개발 기준)
-         * 3) MagicGrid 전 단계(5단계) AI Architecting Skills 5개 이상 완비
-         * 4) 도메인별 참조모델 3건 이상 유지 및 고도화
-         */
-        in :>> presentations : Integer;
-        in :>> refModels : Integer;
-        in :>> aiSkills : Integer;
-        in :>> activeMembers : Integer;
-        in :>> sepMembers : Integer;
+        // Phase 1 -> Phase 2 전환 판정: 지표 값을 LV3 constraint의 입력에 연결
+        constraint phase1To2GateCheck : Phase1ToPhase2GateConstraint {
+            in :>> presentations = accumulatedPresentationsCount;
+            in :>> refModels = completedReferenceModelsCount;
+            in :>> aiSkills = developedAISkillsCount;
+            in :>> activeMembers = regularActiveMembersCount;
+            in :>> sepMembers = sepCertifiedMembersCount;
+        }
 
-        activeMembers >= 30 and
-        sepMembers >= 10 and
-        aiSkills >= 5 and
-        refModels >= 3
+        // Phase 2 -> Phase 3 전환 판정
+        constraint phase2To3GateCheck : Phase2ToPhase3GateConstraint {
+            in :>> presentations = accumulatedPresentationsCount;
+            in :>> refModels = completedReferenceModelsCount;
+            in :>> aiSkills = developedAISkillsCount;
+            in :>> activeMembers = regularActiveMembersCount;
+            in :>> sepMembers = sepCertifiedMembersCount;
+        }
+
+        // Phase 전환 Guard용 파생 Boolean (상태머신 transition의 accept when 조건에서 참조).
+        // 판정식은 constraint 한 곳에만 있고, 여기서는 그 결과(result)만 가져온다.
+        // TODO(확인 필요): constraint usage 자체는 Boolean에 type-conform 하지 않아(Syside type-error) '.result'로 참조했다.
+        //   Syside 정적 평가기는 constraint usage를 평가하지 못하고('no result expression') '.result'도 값이 아닌
+        //   result feature 참조로 돌려준다. 실행(시뮬레이션) 수준에서의 평가 확인이 필요하다.
+        //   대안: 파생 Boolean만 남기고 constraint는 'assert constraint'로 사용(판정식 1곳 유지).
+        attribute isPhase1To2Ready : Boolean = phase1To2GateCheck.result;
+        attribute isPhase2To3Ready : Boolean = phase2To3GateCheck.result;
     }
 } // package ChapterMetricsAndGuards
 
@@ -847,6 +1140,7 @@ package ExternalActorsAndInterfaces {
     doc
     /* 외부 환경(Context)의 액터 정의 및 교환 인터페이스 */
     private import ScalarValues::*;
+    private import StakeholderDefinitions::*;
 
     // ---- 2.1 교환 아이템 (External Items) ----
     item def ToolLicenseInfoItem {
@@ -898,7 +1192,7 @@ package ExternalActorsAndInterfaces {
     // ---- 2.3 경계 외부 액터 (Context Actors) ----
     part def ContextToolVendor {
         doc
-        /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). 기존 ToolVendor 속성 통합. */
+        /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). */
         attribute toolName : String;
         attribute licenseRequired : Boolean;
         port vendorInterface : ~ChapterToolInterfacePort;
@@ -912,19 +1206,20 @@ package ExternalActorsAndInterfaces {
 
     part def ContextTechnicalOperations {
         doc
-        /* 50개 이상의 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
+        /* INCOSE Technical Operations: 다수 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
         port techOpsInterfaceOut : ~ChapterTechOpsInterfacePort;
     }
 
     part def ContextChapterAffiliationSponsor {
         doc
-        /* 계약 기반 후원 조직(CAS). Phase 1에서는 미고려(조건부). */
+        /* 계약 기반 후원 조직(CAS). Phase 1 판정 조건에서는 제외(조건부). */
         port sponsorInterfaceOut : ~ChapterSponsorInterfacePort;
     }
 
     part def ContextPeerSocietyOrganization {
         doc
-        /* KOSSE/KCOSE 등 조직 대 조직 인터페이스. Phase 1 비활성. */
+        /* KOSSE/KCOSE 등 국내 타 학회와의 조직 대 조직 인터페이스. Phase 1 비활성. */
+        attribute peerSocietyKind : PeerSocietyKind;
         port peerOrgInterfaceOut : ~ChapterPeerInterfacePort;
     }
 } // package ExternalActorsAndInterfaces
@@ -950,23 +1245,6 @@ package StakeholderDefinitions {
         other;
     }
 
-    // ---- 내부 이해관계자 간 교환 아이템 및 포트 ----
-    item def NeedRequestItem {
-        doc
-        /* Member → Chapter */
-        attribute needText : String;
-    }
-
-    item def GiveResourceItem {
-        doc
-        /* Chapter → Member */
-        attribute resourceType : GiveResourceKind;
-        attribute detail : String [0..1];
-    }
-
-    port def NeedPort { out item needRequestOut : NeedRequestItem; }
-    port def GivePort { out item giveResourceOut : GiveResourceItem; }
-
     // ---- Enum 정의: 주요 산업 도메인 (패키지 레벨, 타 패키지 참조용) ----
     enum def DomainKind {
         defenseAndAerospace; // 방위산업 / 항공우주
@@ -974,6 +1252,7 @@ package StakeholderDefinitions {
         railInfrastructureAndEnergy; // 철도 / 인프라 / 플랜트
         biomedicalAndHealthcare; // 의료기기 / 헬스케어
         itAndSoftware; // IT / 소프트웨어 시스템
+        semiconductor; // 반도체 / 반도체 장비
         academiaAndResearch; // 학계 / 연구소
         other; // 기타
     }
@@ -993,12 +1272,14 @@ package StakeholderDefinitions {
 
     // ---- 이해관계자 (내부 구성요소) ----
     part def Member {
+        doc
+        /* 회원 식별자는 별도 attribute 없이 usage의 short name(예: <M001>)과 이름으로 부여한다.
+         * 표시명이 요소 이름과 달라야 할 때만 fullName 속성을 추가한다.
+         * TODO(개인정보): 이메일/전화번호는 모델에서 제거했다. 연락처가 필요하면 저장소 밖의 비공개 별도 파일에서 관리한다.
+         */
         // [설문1] 기본 인적 사항 및 소속
-        attribute name : String;
-        attribute email : String [0..*];
         attribute affiliation : String [0..1];
         attribute position : String [0..1];
-        attribute phoneNumber : String [0..1];
         attribute region : RegionKind [0..*];
         attribute domain : DomainKind [0..*];
         attribute domainOther : String [0..1];
@@ -1006,16 +1287,10 @@ package StakeholderDefinitions {
         attribute expectation : String [0..1];
     }
 
-    part def PeerSociety {
-        doc
-        /* 국내 타 학회. KOSSE/KCOSE 등. */
-        attribute peerSocietyKind : PeerSocietyKind;
-    }
-
     part def PeerSocietyMember :> Member {
         doc
         /* KOSSE/KCOSE 등 국내 타 학회 회원. 역량 뷰포인트 비교 대상. */
-        attribute affiliatedSociety : String;
+        attribute affiliatedSociety : PeerSocietyKind;
     }
 
     // ---- Enum 정의: 설문 2 요구사항 관련 ----
@@ -1024,6 +1299,7 @@ package StakeholderDefinitions {
         seminar; // 세미나/특강형
         caseStudy; // 케이스 스터디형
         projectLab; // 프로젝트 실습형
+        onlineReview; // 온라인 진행상황 공유 및 산출물 검토형
         literatureReading; // 문헌 리딩형
         other;
     }
@@ -1032,6 +1308,8 @@ package StakeholderDefinitions {
         notion; // Notion
         slackDiscord; // Slack / Discord
         googleWorkspace; // Google Workspace
+        github; // GitHub
+        seLabsAI; // SE-Labs AI
         other;
     }
 
@@ -1044,7 +1322,7 @@ package StakeholderDefinitions {
         other;
     }
 
-    // ---- Member Part Def (설문 1 + 설문 2 GtWR 특성 기반 업데이트) ----
+    // ---- Member Part Def (설문 1 + 설문 2 GtWR 특성 기반) ----
     part def IncoseKoreaChapterMember :> Member {
         // [설문2] GtWR C2 - Appropriate (적절성)
         attribute interestKeyword : String [0..3];
@@ -1083,33 +1361,28 @@ package StakeholderDefinitions {
 
 ##2_ASELCM LV2_Chapter_Organization/2_Organization_and_Context/3_ChapterSystemContext.sysml##
 package ChapterSystemContext {
+    private import ScalarValues::*;
+    private import SequenceFunctions::*;
     private import StakeholderDefinitions::*;
     private import ExternalActorsAndInterfaces::*;
-    private import WorkingGroupsAndRoles::*;
-    private import ScalarValues::*;
+    private import ChapterMetricsAndGuards::*;
+    private import ChapterMembersDirectory::*;
+    private import GovernanceSystemAndTooling::GovernanceInterfaces::*;
 
-    // ---- 3.1 조직 제약사항 (Constraints) ----
-    constraint def OperationalConstraintCheck {
+    // ---- 3.1 조직 제약사항 (응답 취합용 데이터 구조) ----
+    attribute def OperationalConstraintCheck {
         doc
         /* "개인 제약" 응답 취합용. C10(세트의 완전성) 근거자료. */
         attribute constraintText : String;
     }
 
-    constraint def ExternalDependencyCheck {
+    attribute def ExternalDependencyCheck {
         doc
         /* "외부 의존성/전제조건" 응답 취합용. */
         attribute dependencyText : String;
     }
 
     // ---- 3.2 지식 저장소 (Knowledge Repository) ----
-    enum def PlatformKind {
-        notion;
-        slackOrDiscord;
-        googleWorkspace;
-        github;
-        seLabsAI;
-        other;
-    }
     enum def ArtifactCategoryKind {
         translatedArticle;
         sysmlDiagram;
@@ -1118,7 +1391,7 @@ package ChapterSystemContext {
         memoryArchiveRecord; // 3. Memory Archive
         toolGuideAndConfig; // 4. Tools
         methodologyReference; // 5. Architecture Methodologies & 7. Source
-        referenceModelCode; // 6. Projects/1. Domains (Aerospace, Automotive, IT, Semiconductor)
+        referenceModelCode; // 6. Projects/1. Domains
         assignmentGuide; // 6. Projects/2. references
         aiSkillPromptAndWorkflow; // 6. Projects/3. AI Skills
         advisoryFeedbackRecord;
@@ -1126,47 +1399,55 @@ package ChapterSystemContext {
 
     // 실제 Google Drive / GitHub 폴더 구조를 표현하는 디렉터리 정의
     part def DirectoryFolder {
+        doc
+        /* relativePath는 literal로 직접 입력하지 않고 folderName 과 상위 폴더의 relativePath 에서 파생한다.
+         * 최상위 폴더는 기본값(folderName)을 그대로 쓰고,
+         * 하위 폴더 usage는 ':> subFolders' 와 함께 ':>> relativePath = <상위 폴더>.relativePath + "/" + folderName' 로 재정의한다.
+         * 검증: 문자열 연결('+')은 Syside check 와 정적 평가(Python Compiler.evaluate_feature) 모두에서 동작한다
+         *   (예: dom1_Aerospace.relativePath == "6. Projects/1. Domains/1. Aerospace").
+         * TODO(확인 필요): 하위 폴더 usage에서 상위 폴더 참조(<상위>.relativePath)를 빠뜨려도 오류가 나지 않으므로,
+         *   폴더를 추가할 때 relativePath 재정의 누락을 리뷰에서 확인해야 한다.
+         */
         attribute folderName : String;
-        attribute relativePath : String;
+        attribute relativePath : String default folderName;
         part subFolders : DirectoryFolder [0..*];
     }
 
     item def ChapterArtifact {
         attribute title : String;
         attribute category : ArtifactCategoryKind;
-        attribute owner : String;
-        attribute locationURL : String;
-        attribute repoFolderPath : String default
-            "https://drive.google.com/drive/folders/1ADjJ6gtuJFFFTdRC_r0cKX_8uqG5X47a?usp=drive_link";
+        ref owner : IncoseKoreaChapterMember [0..*];
+        attribute locationURL : String [0..1]; // 외부 URL(Drive 링크 등). 저장소 내 경로는 folder.relativePath 를 사용
+        ref folder : DirectoryFolder [0..1]; // 저장 폴더. 경로 문자열은 folder.relativePath 에서만 얻는다.
     }
 
     // LV1 참조모델 과제 산출물 및 버전·보안·게이트 승인 상태를 관리하는 전용 아티팩트
     item def ReferenceModelArtifact :> ChapterArtifact {
         doc
-        /* 각 워킹그룹이 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold)를 
+        /* 각 워킹그룹이 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold)를
          * 상속받아 작성한 도메인 참조모델 산출물 메타데이터.
+         * domain, targetSoIName, folder, owner 는 제출 건(AssignmentSubmission)이 WorkingGroup에서 파생해 채운다.
          */
         :>> category = ArtifactCategoryKind::referenceModelCode;
 
-        attribute domainName : String; // 예: "Automotive SDV", "Space Mission System"
-        attribute targetSoIName : String; // Whole-System 대상시스템(SoI) 명칭
+        attribute domain : DomainKind [0..*]; // WorkingGroup.domain 에서 파생
+        attribute targetSoIName : String; // Whole-System 대상시스템(SoI) 명칭. WorkingGroup.targetSystemScope 에서 파생
         attribute modelVersion : String; // 예: "v0.1-Scaffold", "v0.2-BlackBox-ConOps"
-        attribute modelFilePath : String [0..1]; // 3_ASELCM_LV1_Target_Reference_Models 내 경로
+        attribute modelFilePath : String [0..1]; // LV1 참조모델 패키지 경로. WorkingGroup.targetSysmlPackagePath 에서 파생
 
-        // LV3 거버넌스(Governance.sysml) 정책 및 게이트 준수 상태 플래그
+        // LV3 거버넌스 정책 및 게이트 준수 상태
         attribute inheritsCommonScaffold : Boolean default true; // 공통 스캐폴드 상속 여부
         attribute isSecurityCleared : Boolean default false; // 사내 민감데이터 배제 및 가상값 치환 완료 여부
-        attribute isGateApproved : Boolean default false; // 교수님 피드백 3종 + 6대 Gate 통과 여부
+        attribute isGateApproved : Boolean; // 직접 입력 금지: AssignmentSubmission.gateCheck 결과에서 파생
     }
 
-    // [6. Projects/3. AI Skills] AI 아키텍팅 프롬프트 및 워크플로우 아티팩트 (MoE 3번과 직결)
+    // [6. Projects/3. AI Skills] AI 아키텍팅 프롬프트 및 워크플로우 아티팩트 (MoE와 직결)
     item def AISkillArtifact :> ChapterArtifact {
         doc
         /* '6. Projects/3. AI Skills' 폴더에 축적되는 단계별 AI 프롬프트 및 자동화 스킬 자산.
-         * ChapterMoEsHolder의 developedAISkillsCount 지표 산출 근거가 됨.
+         * KoreaChapter의 developedAISkillsCount 는 KnowledgeRepository.registeredAISkills 크기로 산출된다.
          */
         :>> category = ArtifactCategoryKind::aiSkillPromptAndWorkflow;
-        :>> repoFolderPath = "6. Projects/3. AI Skills";
 
         attribute targetSEPhase : String; // 예: "PESTEL-CTIMMRA 분석", "DoDAF OV-1/OV-5b 생성", "SysML v2 변환"
         attribute targetToolOrLLM : String [0..1]; // 예: "Gemini / Claude / SE-Labs AI"
@@ -1175,76 +1456,71 @@ package ChapterSystemContext {
     part def KnowledgeRepository {
         doc
         /* Single Source of Truth (Google Workspace & GitHub).
-         * 첨부된 실제 챕터 저장소의 7대 루트 폴더 및 하위 프로젝트/도메인 폴더 트리를 그대로 반영함.
+         * 실제 챕터 저장소의 루트 폴더 및 하위 프로젝트/도메인 폴더 트리를 그대로 반영함.
          */
-        attribute platform : PlatformKind [1..*] = (
-            PlatformKind::googleWorkspace, PlatformKind::github, PlatformKind::seLabsAI,
+        attribute platform : ITPlatformKind [1..*] = (
+            ITPlatformKind::googleWorkspace, ITPlatformKind::github, ITPlatformKind::seLabsAI,
         );
 
-        // ---- 실제 Repo 디렉터리 트리 구조화 ----
+        // ---- 실제 Repo 디렉터리 트리 구조화 (relativePath는 folderName 및 상위 폴더 경로에서 파생) ----
         part folder1_Meeting : DirectoryFolder {
             :>> folderName = "1. Meeting";
-            :>> relativePath = "1. Meeting";
         }
         part folder2_MemberInfo : DirectoryFolder {
             :>> folderName = "2. Member Info";
-            :>> relativePath = "2. Member Info";
         }
         part folder3_MemoryArchive : DirectoryFolder {
             :>> folderName = "3. Memory Archive";
-            :>> relativePath = "3. Memory Archive";
         }
         part folder4_Tools : DirectoryFolder {
             :>> folderName = "4. Tools";
-            :>> relativePath = "4. Tools";
         }
         part folder5_ArchitectureMethodologies : DirectoryFolder {
             :>> folderName = "5. Architecture Methodologies";
-            :>> relativePath = "5. Architecture Methodologies";
         }
         part folder6_Projects : DirectoryFolder {
             :>> folderName = "6. Projects";
-            :>> relativePath = "6. Projects";
 
             part sub1_Domains : DirectoryFolder :> subFolders {
                 :>> folderName = "1. Domains";
-                :>> relativePath = "6. Projects/1. Domains";
+                :>> relativePath = folder6_Projects.relativePath + "/" + folderName;
 
                 part dom1_Aerospace : DirectoryFolder :> subFolders {
                     :>> folderName = "1. Aerospace";
-                    :>> relativePath = "6. Projects/1. Domains/1. Aerospace";
+                    :>> relativePath = sub1_Domains.relativePath + "/" + folderName;
                 }
                 part dom2_Automotive : DirectoryFolder :> subFolders {
                     :>> folderName = "2. Automotive";
-                    :>> relativePath = "6. Projects/1. Domains/2. Automotive";
+                    :>> relativePath = sub1_Domains.relativePath + "/" + folderName;
                 }
                 part dom3_IT : DirectoryFolder :> subFolders {
                     :>> folderName = "3. IT";
-                    :>> relativePath = "6. Projects/1. Domains/3. IT";
+                    :>> relativePath = sub1_Domains.relativePath + "/" + folderName;
                 }
                 part dom4_Semiconductor : DirectoryFolder :> subFolders {
                     :>> folderName = "4. Semiconductor";
-                    :>> relativePath = "6. Projects/1. Domains/4. Semiconductor";
+                    :>> relativePath = sub1_Domains.relativePath + "/" + folderName;
                 }
             }
             part sub2_References : DirectoryFolder :> subFolders {
                 :>> folderName = "2. references";
-                :>> relativePath = "6. Projects/2. references";
+                :>> relativePath = folder6_Projects.relativePath + "/" + folderName;
             }
             part sub3_AISkills : DirectoryFolder :> subFolders {
                 :>> folderName = "3. AI Skills";
-                :>> relativePath = "6. Projects/3. AI Skills";
+                :>> relativePath = folder6_Projects.relativePath + "/" + folderName;
             }
         }
         part folder7_Source : DirectoryFolder {
             :>> folderName = "7. Source";
-            :>> relativePath = "7. Source";
         }
 
         // ---- 저장소 관리 아티팩트 컬렉션 ----
-        part artifact : ChapterArtifact [0..*];
-        part approvedReferenceModels : ReferenceModelArtifact [0..*] :> artifact;
-        part registeredAISkills : AISkillArtifact [0..*] :> artifact;
+        item artifact : ChapterArtifact [0..*];
+        item approvedReferenceModels : ReferenceModelArtifact [0..*] :> artifact;
+        item registeredAISkills : AISkillArtifact [0..*] :> artifact {
+            ref :>> folder = folder6_Projects.sub3_AISkills;
+        }
     }
 
     // ---- 3.3 Chapter Capability (챕터 고유 역량) ----
@@ -1260,49 +1536,42 @@ package ChapterSystemContext {
         chartered; // 인가된 상태
     }
 
-    part def KoreaChapter :> ChapterMetricsAndGuards::ChapterMoEsHolder {
+    part def KoreaChapter :> ChapterMoEsHolder {
         doc
-        /* SoI: INCOSE Korea Chapter. 
+        /* SoI: INCOSE Korea Chapter.
          * 내부에 회원(Member), 지식저장소(KnowledgeRepository) 뿐만 아니라
          * 타 학회와 차별화되는 고유 역량(capabilities)을 내재화하여 포함함.
-         * ChapterMoEsHolder를 상속받아 5대 핵심 MoE를 내재화하고 Phase 전환 제약을 평가함.
+         * ChapterMoEsHolder를 상속받아 핵심 MoE를 내재화하고 Phase 전환 제약을 평가함.
          */
+        // TODO(확인 필요): Phase 1(온라인 스터디 단계)에서 charterStatus가 chartered가 맞는지 확인.
+        //   INCOSE Board 최소 요건을 충족하기 전이라면 emerging이어야 한다.
         attribute charterStatus : ChapterCharterStatusKind = ChapterCharterStatusKind::chartered;
 
-        part member : Member [1..*];
-        part organization : ChapterLogicalOrganization [0..1];
+        ref part member : Member [1..*]; // 구체 회원 목록은 context usage에서 바인딩
         part repository : KnowledgeRepository;
         part capabilities : ChapterCapability [0..*];
 
-        // Phase 1 -> Phase 2 전환 조건 수식 바인딩
-        constraint phase1To2GateCheck : ChapterMetricsAndGuards::Phase1ToPhase2GateConstraint {
-            in presentations = accumulatedPresentationsCount;
-            in refModels = completedReferenceModelsCount;
-            in aiSkills = developedAISkillsCount;
-            in activeMembers = regularActiveMembersCount;
-            in sepMembers = sepCertifiedMembersCount;
-        }
-
-        // Phase 2 -> Phase 3 전환 조건 수식 바인딩
-        constraint phase2To3GateCheck : ChapterMetricsAndGuards::Phase2ToPhase3GateConstraint {
-            in presentations = accumulatedPresentationsCount;
-            in activeMembers = regularActiveMembersCount;
-            in sepMembers = sepCertifiedMembersCount;
-            in aiSkills = developedAISkillsCount;
-            in refModels = completedReferenceModelsCount;
-        }
+        // MoE 자동 산출: 저장소 컬렉션의 크기에서 파생 (수동 입력 금지)
+        // TODO(확인 필요): SequenceFunctions::size 는 Syside check 를 통과한다(import SequenceFunctions::*).
+        //   다만 Syside 정적 평가(Python Compiler.evaluate_feature)는 컬렉션 feature 참조를 값 1개로 세어
+        //   빈 컬렉션도 1로 평가한다. 인스턴스를 가진 실행/시뮬레이션 수준에서만 정확한 개수가 나온다.
+        //   TableView에서 값을 직접 편집하는 방식과 충돌하거나 정적 평가값이 문제가 되면,
+        //   수동 입력 + 'size(...) == count' 일치 여부 assert 로 대체한다.
+        attribute :>> completedReferenceModelsCount = size(repository.approvedReferenceModels);
+        attribute :>> developedAISkillsCount = size(repository.registeredAISkills);
     }
 
     part def ChapterInContext :> KoreaChapter {
         doc
-        /* Base Architecture 단계에서 외부 컨텍스트 포트 5종이 추가된 Chapter */
+        /* Base Architecture 단계에서 외부 컨텍스트 포트가 추가된 Chapter */
         port toolInterface : ChapterToolInterfacePort;
         port sectorInterface : ChapterSectorInterfacePort;
         port techOpsInterface : ChapterTechOpsInterfacePort;
         port sponsorInterface : ChapterSponsorInterfacePort [0..1];
         port peerInterface : ChapterPeerInterfacePort [0..1];
+        port governanceInterface : ~GovernanceInterfacePort; // LV3 거버넌스 시스템과의 켤레 포트
 
-        // 2) 역량 인스턴스 구체화 (ChapterCapabilities 파일 내용 병합)
+        // 역량 인스턴스 구체화
         part globalStandardFastAdoption : ChapterCapability :> capabilities {
             doc
             /* 예시 인스턴스 */
@@ -1319,7 +1588,7 @@ package ChapterSystemContext {
 
         part domainReferenceModelCreation : ChapterCapability :> capabilities {
             doc
-            /* [추가] Do-Tank 핵심 역량: 도메인별 실무형 SysML v2 참조모델 자체 개발 */
+            /* Do-Tank 핵심 역량: 도메인별 실무형 SysML v2 참조모델 자체 개발 */
             attribute :>> descriptionText =
                 "운용개념(ConOps) 및 블랙박스 정의부터 아키텍처·시뮬레이션까지 이어지는 도메인 참조모델 공동 구축";
         }
@@ -1328,23 +1597,21 @@ package ChapterSystemContext {
     // ---- 3.5 통합 System Context Baseline ----
     part incoseKoreaChapterContext {
         doc
-        /* 10월 킥오프 baseline 기준 System Context 인스턴스.
-         * 3개는 활성 연결(Phase 1), 2개는 인스턴스 미생성 보류 상태(Phase 2).
+        /* 킥오프 baseline 기준 System Context 인스턴스.
+         * Phase 1에서 활성 연결되는 외부 액터와, 인스턴스 연결이 보류된 외부 액터(Phase 2 이후)로 구성된다.
          */
         part chapter : ChapterInContext {
             doc
-            /* [SysideViews::TableView 호환성 개선]
+            /* [SysideViews::TableView 호환성]
              * ChapterCoreMoEsTableView에서 ColumnType::attributeValue를 통해 현재 실측값을
-             * 바로 표시하고 UI에서 편집할 수 있도록 5대 핵심 MoE 속성을 명시적으로 재정의(:>>)함.
+             * 바로 표시하고 UI에서 편집할 수 있도록 수동 입력 MoE 속성을 명시적으로 재정의(:>>)함.
+             * 참조모델 수와 AI Skills 수는 KoreaChapter에서 repository 크기로 파생되므로 여기서 다시 입력하지 않는다.
              */
+            ref :>> member = chapterMemberRoster;
+
             attribute :>> accumulatedPresentationsCount = 1;
-            attribute :>> completedReferenceModelsCount = 0;
-            attribute :>> developedAISkillsCount = 0;
             attribute :>> regularActiveMembersCount = 12;
             attribute :>> sepCertifiedMembersCount = 1;
-
-            // 논리 조직(대표/총무/WG) 인스턴스를 챕터 컨텍스트에 통합
-            part :>> organization = WorkingGroupsAndRoles::chapterOrganization;
         }
 
         part cameoVendor : ContextToolVendor;
@@ -1358,11 +1625,12 @@ package ChapterSystemContext {
         connect chapter.sectorInterface to incoseSector.sectorInterfaceOut;
         connect chapter.techOpsInterface to technicalOperations.techOpsInterfaceOut;
 
-        // Phase 2 (보류 - [0..1] 인스턴스화 이후 연결)
+        // Phase 2 이후 (보류 - [0..1] 인스턴스화 이후 연결)
         // connect chapter.sponsorInterface to sponsor.sponsorInterfaceOut;
         // connect chapter.peerInterface to peerSociety.peerOrgInterfaceOut;
     }
 } // package ChapterSystemContext
+
 
 ##2_ASELCM LV2_Chapter_Organization/2_Organization_and_Context/4_WorkingGroupsAndRoles.sysml##
 package WorkingGroupsAndRoles {
@@ -1370,8 +1638,18 @@ package WorkingGroupsAndRoles {
     private import StakeholderDefinitions::*;
     private import ChapterMembersDirectory::*;
     private import ChapterSystemContext::*;
-    private import ChapterSprint::*;
-    private import WG_Submissions_Tracker::*;
+
+    doc
+    /* 챕터 논리 조직(역할과 워킹그룹) 정의 및 인스턴스.
+     *
+     * [새 WG 추가 절차 - def는 수정하지 않는다]
+     * 1) DomainKind: 새 도메인이 StakeholderDefinitions::DomainKind 에 없으면 값을 추가한다.
+     * 2) 폴더: ChapterSystemContext::KnowledgeRepository 의 도메인 폴더 아래에
+     *    'part <이름> : DirectoryFolder :> subFolders' usage를 추가하고 relativePath를 '상위 폴더 경로 + "/" + folderName' 으로 지정한다.
+     * 3) WG usage: 아래 chapterOrganization 안에 'part <이름> :> workingGroups { ... }' usage를 추가한다.
+     * 4) 제출 트래커: WG_Submissions_Tracker 에 'item <이름> : AssignmentSubmission' usage를 추가하고
+     *    workingGroup 을 위 WG로 지정한다. (도메인, SoI, 폴더, 제출자 기본값은 WG에서 파생된다.)
+     */
 
     part def ChapterRole {
         attribute roleTitle : String;
@@ -1380,34 +1658,38 @@ package WorkingGroupsAndRoles {
     }
 
     part def WorkingGroup {
+        doc
+        /* 워킹그룹 정의. 이 WG가 제출한 과제는 AssignmentSubmission.workingGroup 이 이 WG를 참조하는 방식으로 연결된다.
+         * 역방향(WG -> 제출 건) 목록은 중복 정의가 되므로 두지 않는다(트래커/TableView에서 조회).
+         */
         attribute wgName : String;
         attribute targetSystemScope : String;
         attribute domain : DomainKind [0..*];
         ref targetFolder : DirectoryFolder [0..1]; // KnowledgeRepository 내 '6. Projects/1. Domains' 하위 폴더
-        attribute targetSysmlPackagePath : String; // SysML v2 모델 내 LV1 패키지 경로
+        // LV1 루트 폴더명은 한 곳에서만 정의하고, 경로는 루트 + WG 폴더명으로 파생한다.
+        attribute lv1RootPath : String default "3_ASELCM_LV1_Target_Reference_Models";
+        attribute lv1PackageFolderName : String;
+        attribute targetSysmlPackagePath : String = lv1RootPath + "/" + lv1PackageFolderName; // SysML v2 모델 내 LV1 패키지 경로
         part lead : ChapterRole;
         ref participants : IncoseKoreaChapterMember [1..*];
-
-        ref activeSubmissions : AssignmentSubmission [0..*];
-        ref managedReferenceModels : ReferenceModelArtifact [0..*];
     }
 
     part def ChapterLogicalOrganization {
         doc
-        /* 챕터 논리 조직의 순수 구조 정의 (Definition). 구체 회원/WG 바인딩은 chapterOrganization(Usage)에서 수행. */
+        /* 챕터 논리 조직의 순수 구조 정의 (Definition). 구체 회원/WG 바인딩은 chapterOrganization(Usage)에서 수행.
+         * 워킹그룹은 workingGroups 컬렉션에 usage로만 추가한다.
+         */
         part representative : ChapterRole;
         part secretary : ChapterRole;
-        part aerospaceWG : WorkingGroup;
-        part automotiveWG : WorkingGroup;
-        part itSwWG : WorkingGroup;
-        part semiconductorWG : WorkingGroup;
+        part academicAdvisors : ChapterRole;
+        part workingGroups : WorkingGroup [1..*];
     }
 
     // ---- 챕터 논리 조직 인스턴스 (Usage) ----
     part chapterOrganization : ChapterLogicalOrganization {
         part :>> representative {
             :>> roleTitle = "Chapter Representative (챕터 대표)";
-            ref :>> assignee = ChapterMembersDirectory::'이중윤';
+            ref :>> assignee = '이중윤';
             :>> responsibilities = (
                 "챕터 비전(Do-Tank) 수립 및 운영 총괄",
                 "국내외 SE 학회(KOSSE/KCOSE) 및 INCOSE 본부/섹터 대외 협력 대표",
@@ -1416,7 +1698,7 @@ package WorkingGroupsAndRoles {
 
         part :>> secretary {
             :>> roleTitle = "General Secretary (총무 및 운영 담당)";
-            ref :>> assignee = ChapterMembersDirectory::'추수호';
+            ref :>> assignee = '추수호';
             :>> responsibilities = (
                 "격주 웹 스프린트 및 분기 오프라인 모임 운영",
                 "Google Workspace 및 GitHub 저장소(KnowledgeRepository) 형상 관리 및 보안 점검 승인",
@@ -1424,80 +1706,75 @@ package WorkingGroupsAndRoles {
             );
         }
 
-        // [1. Aerospace WG]
-        part :>> aerospaceWG {
-            :>> wgName = "1. Aerospace Working Group";
-            :>> targetSystemScope =
-                "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 3대 임무 체계 전체)";
-            :>> domain = DomainKind::defenseAndAerospace;
-            ref :>> targetFolder =
-                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom1_Aerospace;
-            ref :>> activeSubmissions = WG_Submissions_Tracker::aerospaceWG_Sub_Assignment2;
-            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/1_Aerospace_WG";
-            part :>> lead {
-                :>> roleTitle = "Aerospace WG Lead";
-                ref :>> assignee = ChapterMembersDirectory::'이수';
-            }
-            ref :>> participants = (
-                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
-                ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박홍석',
+        part :>> academicAdvisors {
+            :>> roleTitle = "Academic Advisors (학술자문단)";
+            ref :>> assignee = ('이중윤', '서은석',);
+            :>> responsibilities = (
+                "모델링 방법론 및 피드백 검증 (ModelReviewProcess::reviewByAcademicAdvisors)",
             );
         }
 
+        // [1. Aerospace WG]
+        part aerospaceWG :> workingGroups {
+            :>> wgName = "1. Aerospace Working Group";
+            :>> targetSystemScope =
+                "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 임무 체계 전체)";
+            :>> domain = DomainKind::defenseAndAerospace;
+            ref :>> targetFolder =
+                incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom1_Aerospace;
+            :>> lv1PackageFolderName = "1_Aerospace_WG";
+            part :>> lead {
+                :>> roleTitle = "Aerospace WG Lead";
+                ref :>> assignee = '이수';
+            }
+            ref :>> participants = ('이수', '박승훈', '김다운', '박홍석',);
+        }
+
         // [2. Automotive WG]
-        part :>> automotiveWG {
+        part automotiveWG :> workingGroups {
             :>> wgName = "2. Automotive Working Group";
             :>> targetSystemScope =
                 "2035 소프트웨어 중심 자동차(SDV) 및 섀시를 포함한 Vehicle 전체 시스템";
             :>> domain = DomainKind::automotiveAndMobility;
             ref :>> targetFolder =
                 incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom2_Automotive;
-            ref :>> activeSubmissions = WG_Submissions_Tracker::automotiveWG_Sub_Assignment2;
-            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/2_Automotive_WG";
+            :>> lv1PackageFolderName = "2_Automotive_WG";
             part :>> lead {
                 :>> roleTitle = "Automotive WG Lead";
-                ref :>> assignee = ChapterMembersDirectory::'추수호';
+                ref :>> assignee = '추수호';
             }
-            ref :>> participants = (
-                ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-                ChapterMembersDirectory::'이의범',
-            );
+            ref :>> participants = ('추수호', '최성열', '이의범',);
         }
 
         // [3. IT 폴더 매핑]
-        part :>> itSwWG {
+        part itSwWG :> workingGroups {
             :>> wgName = "3. IT & Robotics Working Group";
             :>> targetSystemScope = "2035 재난 탐색 및 구조 지원 로봇 시스템 전체";
             :>> domain = DomainKind::itAndSoftware;
             ref :>> targetFolder =
                 incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom3_IT;
-            ref :>> activeSubmissions = WG_Submissions_Tracker::itRoboticsWG_Sub_Assignment2;
-            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/3_IT_WG";
+            :>> lv1PackageFolderName = "3_IT_WG";
             part :>> lead {
                 :>> roleTitle = "IT & Robotics WG Lead";
-                ref :>> assignee = ChapterMembersDirectory::'박홍석';
+                ref :>> assignee = '박홍석';
             }
-            ref :>> participants = (
-                ChapterMembersDirectory::'심정환', ChapterMembersDirectory::'박홍석',
-                ChapterMembersDirectory::'최지원', ChapterMembersDirectory::'구정모',
-            );
+            ref :>> participants = ('심정환', '박홍석', '최지원', '구정모',);
         }
 
         // [4. Semiconductor 폴더 매핑]
-        part :>> semiconductorWG {
+        part semiconductorWG :> workingGroups {
             :>> wgName = "4. Semiconductor Working Group";
             :>> targetSystemScope =
                 "2035 EUV 제니스 반도체 장비 시스템 (Level 0 리소그래피/타 공정 컨텍스트 및 Fab 베리에이션 포함)";
-            :>> domain = DomainKind::other;
+            :>> domain = DomainKind::semiconductor;
             ref :>> targetFolder =
                 incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub1_Domains.dom4_Semiconductor;
-            ref :>> activeSubmissions = WG_Submissions_Tracker::semiconductorWG_Sub_Assignment2;
-            :>> targetSysmlPackagePath = "3_ASELCM_LV1_Target_Reference_Models/4_Semiconductor_WG";
+            :>> lv1PackageFolderName = "4_Semiconductor_WG";
             part :>> lead {
                 :>> roleTitle = "Semiconductor WG Lead";
-                ref :>> assignee = ChapterMembersDirectory::'김희재';
+                ref :>> assignee = '김희재';
             }
-            ref :>> participants = ChapterMembersDirectory::'김희재';
+            ref :>> participants = '김희재';
         }
     }
 } // package WorkingGroupsAndRoles
@@ -1506,13 +1783,16 @@ package WorkingGroupsAndRoles {
 package ChapterConOpsAndLifecycle {
     doc
     /* Chapter Behavior — 통합된 시스템 경계 및 인터페이스 모델을 바탕으로
-     * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
+     * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의.
+     * 행위와 구조(chapter)의 연결(perform/exhibit)은 0_ASELCM_Integration 통합 패키지에서 수행한다.
      */
 
     private import ScalarValues::*;
+    private import StakeholderDefinitions::*;
     private import ChapterSystemContext::*;
     private import ExternalActorsAndInterfaces::*;
     private import ChapterMetricsAndGuards::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)
@@ -1521,19 +1801,11 @@ package ChapterConOpsAndLifecycle {
         doc
         /* 온라인 지식교환 방식, Do-Tank 참조모델 개발 프로세스 및 상위 시스템 보고 프로세스의 동적 행위 */
 
-        enum def ExchangeModeKind {
-            seminarStyle; // 세미나/특강형
-            caseStudyStyle; // 케이스 스터디형
-            handsOnLabStyle; // 프로젝트 실습형
-            onlineReviewStyle; // 온라인 진행상황 공유 및 산출물 검토형
-            literatureReadingStyle; // 문헌 리딩형
-        }
-
         action def KnowledgeExchangeSession {
             doc
             /* 내부 비동기/실시간 지식 교환 프로세스 (Internal Flow) */
 
-            in attribute mode : ExchangeModeKind;
+            in attribute mode : OnlineExchangeKind;
             in item referenceResource : HandbookResourceItem [0..1]; // TechOps 등 외부 문헌 리소스 활용
 
             out item producedArtifact : ChapterArtifact; // 논의 후 생성된 지식 자산
@@ -1551,17 +1823,19 @@ package ChapterConOpsAndLifecycle {
             then archiveToKnowledgeStore;
         }
 
-        // [신규] Do-Tank 핵심 운영 프로세스: SE 과제 수행 및 LV1 참조모델 개발·검증 워크플로우
+        // Do-Tank 핵심 운영 프로세스: SE 과제 수행 및 LV1 참조모델 개발·검증 워크플로우
         action def ReferenceModelDevelopmentProcess {
             doc
             /* [LV2 Do-Tank 참조모델 개발 및 품질 게이트 프로세스]
              * 1) 과제 가이드(PDF) 및 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold) 배포
              * 2) 워킹그룹별 도메인 모델링 수행 (블랙박스 SoI, 임무/MOE, 시점 인프라 가정, 5-Tuple 시나리오)
-             * 3) 학술자문단(교수진) 피드백 3대 원칙 및 가이드 6대 자체 감사 게이트(Gate 1~6) 심사
-             * 4) 기업 보안 규정(사내 데이터 배제 및 가상값 치환) 준수 확인
-             * 5) KnowledgeRepository 및 GitHub 메인 브랜치 Baseline 정식 등록
+             * 3) LV3 ModelReviewProcess 수행: 자동 게이트 점검, WG Lead 검토, 학술자문단 심사,
+             *    기업 보안 규정(사내 데이터 배제 및 가상값 치환) 확인, 병합/배포.
+             *    게이트 미통과 시 재작업 루프는 ModelReviewProcess 가 관리한다(여기서 다시 정의하지 않는다).
+             * 4) 검증 통과 모델을 KnowledgeRepository::approvedReferenceModels 에 Baseline으로 정식 등록
              */
             in item assignmentGuide : ChapterArtifact;
+            in attribute gateChecklist : AssignmentGateChecklist;
             out item approvedBaselineModel : ReferenceModelArtifact;
 
             action issueAssignmentAndScaffold {
@@ -1572,15 +1846,9 @@ package ChapterConOpsAndLifecycle {
                 doc
                 /* 워킹그룹이 스캐폴드를 상속(:>)하여 도메인 모델 작성 */
             }
-            action reviewByAdvisorsAndVerifyGates {
-                doc
-                /* 교수님 피드백 1(존재목적 달성 표현), 피드백 2(MOE 목표값/한계값/단위),
-                 * 피드백 3(운용시점 인프라 가정 및 블랙박스 상호작용) 및 Gate 1~6 충족 여부 검증
-                 */
-            }
-            action verifySecurityAndAnonymization {
-                doc
-                /* 회사명/프로젝트명 비언급 및 민감 수치 가상값 치환 여부 점검 */
+            // LV3 검토 프로세스를 하위 action으로 재사용
+            action modelReview : ModelReviewProcess {
+                in :>> submittedChecklist = gateChecklist;
             }
             action baselineToKnowledgeRepository {
                 doc
@@ -1589,8 +1857,7 @@ package ChapterConOpsAndLifecycle {
 
             first issueAssignmentAndScaffold;
             then developDomainModelInWG;
-            then reviewByAdvisorsAndVerifyGates;
-            then verifySecurityAndAnonymization;
+            then modelReview;
             then baselineToKnowledgeRepository;
         }
 
@@ -1617,7 +1884,8 @@ package ChapterConOpsAndLifecycle {
     package Lifecycle {
         doc
         /* 챕터 성장 단계별 상태머신.
-         * LV3 거버넌스의 PhaseTransitionGateCondition(승인된 참조모델 3건 이상, 발표자료 10건 이상)과 연동됨.
+         * Phase 전환 조건은 LV3 QualityGatesAndReviewProcess 의 Phase1ToPhase2GateConstraint /
+         * Phase2ToPhase3GateConstraint 가 단일 정의하며, 이 상태머신은 metrics 의 판정 결과만 참조한다.
          */
 
         state def ChapterLifecycle {
@@ -1628,59 +1896,43 @@ package ChapterConOpsAndLifecycle {
 
             state onlineStudyPhase {
                 doc
-                /* Phase 1: 온라인 스터디 및 도메인별 LV1 참조모델 초기 개발 단계 (현재)
-                 * - 활성 Context 3종만 연결된 상태
-                 * - 워킹그룹별 블랙박스 정의 및 ConOps 모델링 과제 수행 중
+                /* Phase 1: 온라인 스터디 및 도메인별 LV1 참조모델 초기 개발 단계
+                 * - Phase 1 활성 Context(incoseKoreaChapterContext)만 연결된 상태
+                 * - 워킹그룹별 블랙박스 정의 및 ConOps 모델링 과제 수행
                  */
             }
 
             state sponsorshipAndOfflineSeminarPhase {
                 doc
                 /* Phase 2: 기업 스폰서 확보 및 오프라인 세미나 정례화 단계
-                 * - 교육/실무 참고용 LV1 참조모델 3건 이상 확보 및 발표자료 10건 이상 누적 시 진입
+                 * - 진입 조건: Phase1ToPhase2GateConstraint 참조
+                 *   (판정식은 기업 스폰서 조건을 포함하지 않는다. 스폰서 연동 후 별도 조건 추가 여부는 TODO)
                  * - Sponsor, PeerSociety(KOSSE/KCOSE) 연결 활성화
+                 * TODO(확인 필요): 단계 이름은 '기업 스폰서 확보'이나 진입 판정식에는 스폰서 조건이 없다.
                  */
             }
 
             state officialWorkingGroupPhase {
                 doc
-                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 및 자체 아키텍트 인증 프로그램 운영 단계 */
+                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 및 자체 아키텍트 인증 프로그램 운영 단계.
+                 * 진입 조건: Phase2ToPhase3GateConstraint 참조
+                 */
             }
 
+            // 전이 트리거: 파생 Boolean 값의 변화를 change trigger(accept when)로 명시
+            // TODO(확인 필요): 'accept when' 구문은 Syside check 를 통과했으나, 변화 감지 실행 의미는 확인하지 못했다.
             transition phase1To2
                 first onlineStudyPhase
-                if (
-                Phase1ToPhase2GateConstraint(
-                    metrics.accumulatedPresentationsCount,
-                    metrics.completedReferenceModelsCount,
-                    metrics.developedAISkillsCount,
-                    metrics.regularActiveMembersCount,
-                    metrics.sepCertifiedMembersCount
-                )
-            )
+                accept when metrics.isPhase1To2Ready
                 then sponsorshipAndOfflineSeminarPhase {
-                doc
-                /* Phase 2 전환(Transition) 조건 (Phase1ToPhase2GateConstraint 반영):
-                 * (발표 자료 10건 이상 OR 활동 인원 15명 초과) & 참조모델 3건 이상 & AI Skills 3개 이상 & SEP 3명 이상
-                 */
+                doc /* Phase 2 전환 조건: Phase1ToPhase2GateConstraint 참조 */
             }
 
             transition phase2To3
                 first sponsorshipAndOfflineSeminarPhase
-                if (
-                Phase2ToPhase3GateConstraint(
-                    metrics.accumulatedPresentationsCount,
-                    metrics.completedReferenceModelsCount,
-                    metrics.developedAISkillsCount,
-                    metrics.regularActiveMembersCount,
-                    metrics.sepCertifiedMembersCount
-                )
-            )
+                accept when metrics.isPhase2To3Ready
                 then officialWorkingGroupPhase {
-                doc
-                /* Phase 3 전환(Transition) 조건 (Phase2ToPhase3GateConstraint 반영):
-                 * 활동 인원 30명 이상 & SEP 10명 이상 & AI Skills 5개 이상 & 참조모델 3건 이상 유지
-                 */
+                doc /* Phase 3 전환 조건: Phase2ToPhase3GateConstraint 참조 */
             }
         }
     } // package Lifecycle
@@ -1688,52 +1940,74 @@ package ChapterConOpsAndLifecycle {
 
 ##2_ASELCM LV2_Chapter_Organization/3_Operations_and_Lifecycle/2_SprintAndAssignmentSchema.sysml##
 package ChapterSprint {
-    private import StakeholderDefinitions::*;
-    private import Time::*;
-    private import ChapterConOpsAndLifecycle::ConOps::*;
-    private import ChapterSystemContext::*;
     private import ScalarValues::*;
+    private import Time::*;
+    private import StakeholderDefinitions::*;
+    private import ChapterSystemContext::*;
+    private import ChapterConOpsAndLifecycle::ConOps::*;
+    private import WorkingGroupsAndRoles::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // =========================================================================
-    // 1. 격주 스프린트 및 킥오프 회의 공통 템플릿
+    // 1. 스프린트, 격주 스프린트 및 킥오프 회의 공통 템플릿
     // =========================================================================
+    enum def TaskCompletionKind {
+        open; // 미착수
+        inProgress; // 진행 중
+        done; // 완료
+    }
+
+    item def Sprint {
+        doc
+        /* 스프린트 단위. Action Item과 과제는 문자열("Sprint 2") 대신 이 요소를 ref로 참조한다.
+         * 새 스프린트는 분기별 회의록 패키지(SprintMeetings_YYYY_Qn)에 usage로 추가한다.
+         */
+        attribute sprintNo : Integer;
+        attribute endDate : Iso8601DateTimeStructure; // 스프린트 마감일
+    }
+
     action def ChapterSprintMeeting :> KnowledgeExchangeSession {
         attribute meetingDate : Iso8601DateTimeStructure;
         attribute location : String;
         ref attendees : IncoseKoreaChapterMember [1..*];
         attribute keyDecisions : String [0..*];
+
+        // 회의록 산출물은 항상 '1. Meeting' 폴더에 저장된다(경로 문자열은 folder.relativePath 에서만 얻는다).
+        out item :>> producedArtifact : ChapterArtifact {
+            :>> category = ArtifactCategoryKind::meetingMinutes;
+            ref :>> folder = incoseKoreaChapterContext.chapter.repository.folder1_Meeting;
+        }
     }
 
     action def ActionItemTask {
         ref owner : IncoseKoreaChapterMember [1..*];
         attribute taskDescription : String;
-        attribute dueDate : String;
+        ref dueSprint : Sprint [0..1]; // 스프린트 마감이 기한이면 이 ref만 지정
+        attribute dueDate : Iso8601DateTimeStructure [0..1] default dueSprint.endDate; // 스프린트와 무관한 기한만 재정의
+        attribute isImmediate : Boolean default false; // 즉시 처리 항목이면 true (dueDate 없음)
+        attribute completionStatus : TaskCompletionKind default TaskCompletionKind::open;
     }
 
     // =========================================================================
-    // 2. [신규] SE 모델링 과제(Assignment), 교수님 피드백 및 제출물 관리 스키마
+    // 2. SE 모델링 과제(Assignment), 학술자문단 피드백 및 제출물 관리 스키마
     // =========================================================================
-    enum def SEAssignmentStageKind {
-        Stage1_SoIAndQuestionSelection; // 과제 1: 대상시스템(SoI) 및 Engineering Question 선정
-        Stage2_BlackBoxAndConOps; // 과제 2: 블랙박스 정의, 임무/MOE 설정 및 5-Tuple ConOps 시나리오
-        Stage3_LogicalArchitecture; // 과제 3: 화이트박스 논리 아키텍처 및 기능 분해/할당
-        Stage4_PhysicalAndSimulation; // 과제 4: 물리 아키텍처, 요구사항 추적성 및 시뮬레이션 검증(V&V)
-    }
-
     enum def SubmissionStatusKind {
         notStarted; // 착수 전
         inProgress; // 워킹그룹 모델링 진행 중
-        underAcademicReview; // 학술자문단(교수진) 리뷰 및 게이트 검증 중
-        revisionRequired; // 교수님 피드백 반영 및 보완 필요
-        approvedBaseline; // 6대 Gate 통과 및 KnowledgeRepository 정식 등록 승인
+        underAcademicReview; // 학술자문단 리뷰 및 게이트 검증 중
+        revisionRequired; // 학술자문단 피드백 반영 및 보완 필요
+        approvedBaseline; // 게이트 통과 및 KnowledgeRepository 정식 등록 승인
     }
 
-    // 학술자문단(교수진) 피드백 레코드 정의
+    // 학술자문단 피드백 레코드 정의
     item def AdvisoryFeedback {
         doc
-        /* 이중윤·서은석 교수님 등 학술자문단이 과제 및 모델에 대해 제시한 피드백과 해소 상태 */
+        /* 학술자문단이 과제 및 모델에 대해 제시한 피드백과 해소 상태.
+         * 피드백이 특정 회의에서 나왔다면 sourceMeeting만 지정하면 feedbackDate가 회의 일시에서 파생된다.
+         */
         ref reviewers : IncoseKoreaChapterMember [1..*];
-        attribute feedbackDate : String [0..1];
+        ref action sourceMeeting : ChapterSprintMeeting [0..1];
+        attribute feedbackDate : Iso8601DateTimeStructure [0..1] default sourceMeeting.meetingDate;
         attribute feedbackPoints : String [1..*];
         attribute isResolvedInModel : Boolean default false;
     }
@@ -1742,50 +2016,57 @@ package ChapterSprint {
     action def ModelingAssignment :> ActionItemTask {
         doc
         /* 각 스프린트 주기에 부여되는 시스템 엔지니어링 모델링 과제 템플릿.
-         * 실무 가이드 문서, 필수 반영 체크포인트, 그리고 교수님 피드백을 통합 관리함.
+         * 실무 가이드 문서, 필수 반영 체크포인트(Gate/Feedback constraint), 학술자문단 피드백을 통합 관리함.
+         * 체크포인트 설명은 각 constraint def의 doc에만 있으며 여기서는 참조(ref)만 한다.
          */
         attribute assignmentNo : Integer [1..*];
         attribute stage : SEAssignmentStageKind [1..*];
         ref guideArtifact : ChapterArtifact [0..1]; // 참고 실무 가이드(PDF 등)
         attribute scaffoldPackageName : String [0..1]; // 상속해야 할 LV1 공통 스캐폴드 패키지명
-        attribute mandatoryCheckpoints : String [1..*]; // 과제 통과 필수 요건 목록
-        part advisoryFeedbacks : AdvisoryFeedback [0..*]; // 교수님 피드백 내역
+        ref constraint mandatoryCheckpoints : AssignmentCheckpointRule [1..*]; // 과제 통과 필수 요건
+        item advisoryFeedbacks : AdvisoryFeedback [0..*]; // 학술자문단 피드백 내역
         attribute startDate : Iso8601DateTimeStructure;
     }
 
-    // 워킹그룹/회원별 과제 제출물 및 품질 게이트 심사 결과 트래커
+    // 워킹그룹별 과제 제출물 및 품질 게이트 심사 결과 트래커
     item def AssignmentSubmission {
         doc
         /* 각 워킹그룹이 특정 과제(ModelingAssignment)에 대해 제출한 LV1 참조모델과
-         * LV3 거버넌스 품질 게이트(교수님 피드백 3종 + 실무 가이드 6대 Gate) 통과 현황을 관리함.
+         * LV3 거버넌스 품질 게이트(학술자문단 피드백 + 실무 가이드 Gate) 통과 현황을 관리함.
+         * 도메인, SoI, 저장 폴더, 소유자는 workingGroup 에서 파생하므로 제출 usage에는 다시 적지 않는다.
          */
         ref targetAssignment : ModelingAssignment;
-        attribute workingGroupName : String;
-        ref submitters : IncoseKoreaChapterMember [1..*];
-        part submittedModel : ReferenceModelArtifact;
+        ref workingGroup : WorkingGroup;
+        // 기본값은 WG 참여자. 제출자가 WG 참여자와 다를 때만 usage에서 재정의한다.
+        ref submitters : IncoseKoreaChapterMember [1..*] default workingGroup.participants;
         attribute status : SubmissionStatusKind default SubmissionStatusKind::inProgress;
 
-        // 교수님 피드백 3대 원칙 및 가이드 6대 Gate 충족 여부 체크리스트
-        attribute passFeedback1_MissionConOps : Boolean default false; // 존재목적(임무/사업목표) 달성 표현 여부
-        attribute passFeedback2_MOEQuantified : Boolean default false; // MOE 목표값/한계값/단위 지정 여부
-        attribute passFeedback3_BlackBoxInfra : Boolean default false; // 운용시점 인프라 가정 기반 외부 상호작용 여부
-        attribute passGate1_WholeSystem : Boolean default false; // 독립 임무 완결 단위(Whole-System) 여부
-        attribute passGate2_SolutionFreeBlackBox : Boolean default false; // 내부 HW/SW 구현 배제 여부
-        attribute passGate3_TimeframeLinked : Boolean default false; // 운용 시점 4대 전제 조건 반영 여부
-        attribute passGate4_ODDThreeGroups : Boolean default false; // 장소 그룹(공칭/복합/극한) 추상화 여부
-        attribute passGate5_ThreeExternalScopes : Boolean default false; // 조직/물리/자연 각 2개 이상 및 외란 아이템화 여부
-        attribute passGate6_NoIsolatedActor : Boolean default false; // 모든 외부 액터의 시나리오 최소 1회 등장 여부
+        // 게이트 입력 전체(Feedback + Gate 항목)를 하나의 체크리스트로 보관
+        attribute checklist : AssignmentGateChecklist;
 
-        constraint gateCheck : QualityGatesAndReviewProcess::ReferenceModelAssignmentApprovalGate {
-            in passFb1 = passFeedback1_MissionConOps;
-            in passFb2 = passFeedback2_MOEQuantified;
-            in passFb3 = passFeedback3_BlackBoxInfra;
-            in passG1 = passGate1_WholeSystem;
-            in passG2 = passGate2_SolutionFreeBlackBox;
-            in passG3 = passGate3_TimeframeLinked;
-            in passG4 = passGate4_ODDThreeGroups;
-            in passG5 = passGate5_ThreeExternalScopes;
-            in passG6 = passGate6_NoIsolatedActor;
+        // TODO(확인 필요): 속성 이름(checklist)이 constraint 파라미터 이름과 같아 'AssignmentSubmission::checklist' 로 한정했다.
+        //   Syside Python API로 이 바인딩의 referent 가 AssignmentSubmission::checklist (자기 자신이 아님)임을 확인했다.
+        //   실행 시 소유 인스턴스의 checklist로 해석되는지는 시뮬레이션 수준에서 추가 확인이 필요하다.
+        constraint gateCheck : ReferenceModelAssignmentApprovalGate {
+            in :>> checklist = AssignmentSubmission::checklist;
+        }
+
+        // TableView 표시용 파생 Boolean. 판정식은 gateCheck 한 곳에만 있다.
+        // TODO(확인 필요): constraint usage는 Boolean에 직접 type-conform 하지 않아 '.result'로 참조했다(실행 의미 확인 필요).
+        attribute isGatePassed : Boolean = gateCheck.result;
+
+        item submittedModel : ReferenceModelArtifact {
+            :>> domain = workingGroup.domain;
+            :>> targetSoIName = workingGroup.targetSystemScope;
+            :>> modelFilePath = workingGroup.targetSysmlPackagePath;
+            ref :>> folder = workingGroup.targetFolder;
+            ref :>> owner = workingGroup.participants;
+            :>> isGateApproved = isGatePassed;
+        }
+
+        // 상태와 게이트 결과의 모순 방지: 승인된 Baseline이면 게이트를 반드시 통과해야 한다.
+        assert constraint statusGateConsistency {
+            status == SubmissionStatusKind::approvedBaseline implies isGatePassed
         }
     }
 } // package ChapterSprint
@@ -1794,13 +2075,21 @@ package ChapterSprint {
 package ChapterMembersDirectory {
     private import StakeholderDefinitions::*;
 
+    doc
+    /* 챕터 회원 디렉터리.
+     * 새 회원은 'part <M0NN> '이름' : IncoseKoreaChapterMember :> chapterMemberRoster' usage 1개만 추가하면
+     * KoreaChapter.member(바인딩: chapterMemberRoster)에 자동으로 포함된다.
+     * 식별자는 short name(<M001>)으로 부여하며 별도 attribute를 만들지 않는다.
+     * TODO(개인정보): 이메일/전화번호는 모델에서 제거했다. 필요하면 저장소 밖의 비공개 별도 파일에서 관리한다.
+     */
+
+    // 회원 전체 집합: 모든 회원 usage는 이 컬렉션을 subset 한다.
+    part chapterMemberRoster : IncoseKoreaChapterMember [0..*];
+
     // ---- 개별 회원 모델링 (Part Usages) ----
-    part '이수' : IncoseKoreaChapterMember {
-        :>> name = "이수";
-        :>> email = "isugkgkgk@gmail.com";
+    part <M001> '이수' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "인터그래비티(주)";
         :>> position = "비행SW팀 연구원";
-        :>> phoneNumber = "010-2650-9183";
         :>> region = RegionKind::daejeonSejongChungcheong;
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -1842,12 +2131,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "다른 INCOSE 챕터와의 국제적 협력";
     }
 
-    part '박승훈' : IncoseKoreaChapterMember {
-        :>> name = "박승훈";
-        :>> email = "abhyung123@gmail.com";
+    part <M002> '박승훈' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "영풍전자";
         :>> position = "무인항전체계개발팀 책임연구원";
-        :>> phoneNumber = "010-4007-8059";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -1886,12 +2172,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "incose와 연계한 글로벌 현업트랜드 제공";
     }
 
-    part '이중윤' : IncoseKoreaChapterMember {
-        :>> name = "이중윤";
-        :>> email = "leejy@ajou.ac.kr, lee.joongyoon@gmail.com";
+    part <M003> '이중윤' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "아주대학교";
         :>> position = "시스템공학과 교수";
-        :>> phoneNumber = "010-8951-5222";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = (
             DomainKind::defenseAndAerospace, DomainKind::automotiveAndMobility,
@@ -1943,12 +2226,9 @@ package ChapterMembersDirectory {
             "챕터 구성원이 학회 및 협회 활동에 참가 (학술대회 발표 및 임원진으로 참여 등)";
     }
 
-    part '서은석' : IncoseKoreaChapterMember {
-        :>> name = "서은석";
-        :>> email = "essuh@snu.ac.kr";
+    part <M004> '서은석' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "서울대학교";
         :>> position = "교수";
-        :>> phoneNumber = "010-2688-7175";
         :>> region = RegionKind::seoul;
         :>> domain = (DomainKind::automotiveAndMobility, DomainKind::academiaAndResearch,);
         :>> preferredActivity = (
@@ -1974,12 +2254,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "추후 논의";
     }
 
-    part '추수호' : IncoseKoreaChapterMember {
-        :>> name = "추수호";
-        :>> email = "chooshow@gmail.com";
+    part <M005> '추수호' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 엔지니어";
-        :>> phoneNumber = "010-8379-0578";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::automotiveAndMobility;
         :>> preferredActivity = (
@@ -2016,12 +2293,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "자동차/IoT 등 다양한 분야의 전문가 참여, Incose와 직접 교류";
     }
 
-    part '구정모' : IncoseKoreaChapterMember {
-        :>> name = "구정모";
-        :>> email = "jeongmokoo@gmail.com";
+    part <M006> '구정모' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "볼보그룹코리아(주)";
         :>> position = "Group Technology&Operations Principal Solution Architect";
-        :>> phoneNumber = "010-6304-3930";
         :>> region = (
             RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::busanUlsanGyeongnam,
         );
@@ -2055,12 +2329,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "표준 가이드 기준으로 실무 적용 가능 레퍼런스 제공";
     }
 
-    part '김희재' : IncoseKoreaChapterMember {
-        :>> name = "김희재";
-        :>> email = "tim0huj@gmail.com";
+    part <M007> '김희재' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "에드워드코리아";
         :>> position = "시스템개발부 (NPI-IS Sr. Systems Engineer)";
-        :>> phoneNumber = "010-9863-7900";
         :>> region = (
             RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::daejeonSejongChungcheong,
         );
@@ -2097,12 +2368,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "타 학회 경험 없음";
     }
 
-    part '김다운' : IncoseKoreaChapterMember {
-        :>> name = "김다운";
-        :>> email = "dawun.kim93@gmail.com";
+    part <M008> '김다운' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "한국항공우주산업";
         :>> position = "디지털엔지니어링팀 선임연구원";
-        :>> phoneNumber = "010-4745-6797";
         :>> region = RegionKind::busanUlsanGyeongnam;
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -2143,12 +2411,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "MBSE 측면을 강화해 국내 도입 시 도움을 주면 좋겠습니다.";
     }
 
-    part '박홍석' : IncoseKoreaChapterMember {
-        :>> name = "박홍석";
-        :>> email = "hongseok@selab.ai";
+    part <M009> '박홍석' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "시스템엔지니어링(주)";
         :>> position = "연구개발팀 연구원";
-        :>> phoneNumber = "010-8944-3072";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::academiaAndResearch;
         :>> preferredActivity = (
@@ -2178,12 +2443,9 @@ package ChapterMembersDirectory {
     }
 
     // ---- 설문 2 응답 없는 회원 (설문 1 정보만 유지) ----
-    part '심정환' : IncoseKoreaChapterMember {
-        :>> name = "심정환";
-        :>> email = "jshim@lotustech.co.kr, jshim10@gmail.com";
+    part <M010> '심정환' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "로터스정보기술";
         :>> position = "대표이사";
-        :>> phoneNumber = "010-3270-3997";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::itAndSoftware;
         :>> preferredActivity = (
@@ -2194,20 +2456,14 @@ package ChapterMembersDirectory {
         :>> expectation = "INCOSE 공인 국제 인증자격 관련 소모임 또는 스터디그룹";
     }
 
-    part '최성열' : IncoseKoreaChapterMember {
-        :>> name = "최성열";
-        :>> email = "bm0611@gmail.com";
+    part <M011> '최성열' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 엔지니어";
-        :>> phoneNumber = "010-6302-3888";
     }
 
-    part '최지원' : IncoseKoreaChapterMember {
-        :>> name = "최지원";
-        :>> email = "ein1013@selab.ai";
+    part <M012> '최지원' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "아주대학교";
         :>> position = "공학연구소 연구원";
-        :>> phoneNumber = "010-8217-0205";
         :>> region = RegionKind::seoul;
         :>> domain = (DomainKind::itAndSoftware, DomainKind::academiaAndResearch,);
         :>> preferredActivity = (
@@ -2218,138 +2474,133 @@ package ChapterMembersDirectory {
         :>> expectation = "국내 학회 참여 경험이 없어 잘 모릅니다. 많이 배우고 싶습니다.";
     }
 
-    part '이의범' : IncoseKoreaChapterMember {
-        :>> name = "이의범";
-        :>> email = "tigerleb@gmail.com";
+    part <M013> '이의범' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 평가 엔지니어";
-        :>> phoneNumber = "010-5125-2884";
     }
 } // package ChapterMembersDirectory
 
 ##2_ASELCM LV2_Chapter_Organization/4_Member_and_Activity_Registry/2_MemberNeedsAndSecurityRules.sysml##
 package MemberNeedsAndSecurityRules {
     doc
-    /* Chapter Requirements — 통합된 SystemContext 및 Stakeholders 모델을 
-     * 기반으로 한 회원 요구사항(Member Needs) 및 보안 규칙(Security Rules) 정의
+    /* Chapter Requirements — 통합된 SystemContext 및 Stakeholders 모델을
+     * 기반으로 한 회원 요구사항(Member Needs) 및 보안 규칙(Security Rules) 정의.
+     *
+     * 속성 값은 def 안에서 actor(회원) 기준으로 한 번만 바인딩한다.
+     * 새 회원의 요구사항/보안 규칙은 'need_M0NN' / 'security_M0NN' usage에 subject와 actor만 지정하면 된다.
      */
 
     private import ScalarValues::*;
+    private import RequirementDerivation::*;
     private import StakeholderDefinitions::*;
     private import ChapterSystemContext::*;
+    private import ChapterObjectives::*;
+    private import ChapterMembersDirectory::*;
 
     // ==========================================
     // 1. Member Needs (회원 요구사항)
     // ==========================================
     package ChapterMembers_Needs {
-        private import ChapterMembersDirectory::*;
-
         doc
-        /* 회원들의 핵심 니즈와 가치 도출 근거를 담은 요구사항 세트 */
+        /* 회원들의 핵심 니즈와 가치 도출 근거를 담은 요구사항 세트.
+         * MemberNeedRequirement는 Objective를 상속하지 않고, 각 need usage가 ChapterObjective에서 파생(#derivation)된다.
+         */
 
-        requirement def MemberNeedRequirement :> ChapterObjectives::Objective {
+        requirement def MemberNeedRequirement {
             doc
-            /* 구글 폼 문항7 "얻고 싶은 것 하나" 작성 템플릿을 옮기는 요구사항 정의.
+            /* 구글 폼 문항 "얻고 싶은 것 하나" 작성 템플릿을 옮기는 요구사항 정의.
              * GtWR(Guide to Writing Requirements) C1,C3,C5,C9 확인 대상.
              */
-            subject chapter;
+            subject chapter : KoreaChapter;
             actor member : IncoseKoreaChapterMember;
 
-            attribute coreValueWhat : String [0..*]; // [추가] 문항7: 구체적인 요구사항 핵심 가치 (What)
-            attribute rationale : String [0..*]; // 문항8: 도출 근거 (Why, C8)
-            attribute validationCriterion : String [0..*]; // 문항9: 타당성 확인 기준 (Validation, C7)
-            attribute priority : String [0..*]; // 문항10: 우선순위 (세트 조율용)
+            attribute coreValueWhat : String [0..*] = member.coreValueWhat; // 구체적인 요구사항 핵심 가치 (What)
+            attribute rationale : String [0..*] = member.rationale; // 도출 근거 (Why, C8)
+            attribute validationCriterion : String [0..*] = member.validationCriterion; // 타당성 확인 기준 (Validation, C7)
+            attribute priority : String [0..*] = member.priority; // 우선순위 (세트 조율용)
         }
 
-        // --- 개별 회원 요구사항 Usage ---
+        // --- 개별 회원 요구사항 Usage (subject, actor 지정만 남김) ---
 
-        requirement lee_su_need : MemberNeedRequirement {
+        requirement need_M001 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'이수';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'이수'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'이수'.rationale;
-            attribute :>> validationCriterion = ChapterMembersDirectory::'이수'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'이수'.priority;
+            actor member = '이수';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M001;
+            }
         }
 
-        requirement park_sh_need : MemberNeedRequirement {
+        requirement need_M002 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'박승훈';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'박승훈'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'박승훈'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'박승훈'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'박승훈'.priority;
+            actor member = '박승훈';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M002;
+            }
         }
 
-        requirement lee_jy_need : MemberNeedRequirement {
+        requirement need_M003 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'이중윤';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'이중윤'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'이중윤'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'이중윤'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'이중윤'.priority;
+            actor member = '이중윤';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M003;
+            }
         }
 
-        requirement suh_es_need : MemberNeedRequirement {
+        requirement need_M004 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'서은석';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'서은석'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'서은석'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'서은석'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'서은석'.priority;
+            actor member = '서은석';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M004;
+            }
         }
 
-        requirement chu_sh_need : MemberNeedRequirement {
+        requirement need_M005 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'추수호';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'추수호'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'추수호'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'추수호'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'추수호'.priority;
+            actor member = '추수호';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M005;
+            }
         }
 
-        requirement ku_jm_need : MemberNeedRequirement {
+        requirement need_M006 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'구정모';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'구정모'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'구정모'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'구정모'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'구정모'.priority;
+            actor member = '구정모';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M006;
+            }
         }
 
-        requirement kim_hj_need : MemberNeedRequirement {
+        requirement need_M007 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'김희재';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'김희재'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'김희재'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'김희재'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'김희재'.priority;
+            actor member = '김희재';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M007;
+            }
         }
 
-        requirement kim_dw_need : MemberNeedRequirement {
+        requirement need_M008 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'김다운';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'김다운'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'김다운'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'김다운'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'김다운'.priority;
+            actor member = '김다운';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M008;
+            }
         }
 
-        requirement park_hs_need : MemberNeedRequirement {
+        requirement need_M009 : MemberNeedRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'박홍석';
-            attribute :>> coreValueWhat = ChapterMembersDirectory::'박홍석'.coreValueWhat;
-            attribute :>> rationale = ChapterMembersDirectory::'박홍석'.rationale;
-            attribute :>> validationCriterion =
-                ChapterMembersDirectory::'박홍석'.validationCriterion;
-            attribute :>> priority = ChapterMembersDirectory::'박홍석'.priority;
+            actor member = '박홍석';
+            #derivation connection {
+                end #original ::> chapterObjective;
+                end #derive ::> need_M009;
+            }
         }
     } // package ChapterMembers_Needs
 
@@ -2361,102 +2612,117 @@ package MemberNeedsAndSecurityRules {
         /* 리스크/보안 뷰포인트의 모델 규칙(Rule)으로 직접 채택되는 제약사항 세트 */
 
         requirement def KnowledgeSharingSecurityRequirement {
-            private import ChapterMembersDirectory::*;
             doc
-            /* 문항18 체크박스 응답 — 지식공유 시 준수할 최소 규칙.
+            /* 지식공유 시 준수할 최소 규칙 (설문 체크박스 응답).
              * 소속 기업의 지적 재산(IP)이나 민감 정보를 보호하기 위한 안전 장치.
              */
-            subject chapter;
+            subject chapter : KoreaChapter;
             actor member : IncoseKoreaChapterMember;
 
-            attribute securityRule : SecurityRuleKind [0..*];
-            attribute securityRuleOther : String [0..1];
-        }
-        // --- 개별 회원 보안 규칙 Usage ---
-
-        requirement lee_su_security : KnowledgeSharingSecurityRequirement {
-            subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'이수';
-            attribute :>> securityRule = ChapterMembersDirectory::'이수'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'이수'.securityRuleOther;
+            attribute securityRule : SecurityRuleKind [0..*] = member.securityRule;
+            attribute securityRuleOther : String [0..1] = member.securityRuleOther;
         }
 
-        requirement park_sh_security : KnowledgeSharingSecurityRequirement {
+        // --- 개별 회원 보안 규칙 Usage (subject, actor 지정만 남김) ---
+
+        requirement security_M001 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'박승훈';
-            attribute :>> securityRule = ChapterMembersDirectory::'박승훈'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'박승훈'.securityRuleOther;
+            actor member = '이수';
         }
 
-        requirement lee_jy_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M002 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'이중윤';
-            attribute :>> securityRule = ChapterMembersDirectory::'이중윤'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'이중윤'.securityRuleOther;
+            actor member = '박승훈';
         }
 
-        requirement suh_es_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M003 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'서은석';
-            attribute :>> securityRule = ChapterMembersDirectory::'서은석'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'서은석'.securityRuleOther;
+            actor member = '이중윤';
         }
 
-        requirement chu_sh_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M004 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'추수호';
-            attribute :>> securityRule = ChapterMembersDirectory::'추수호'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'추수호'.securityRuleOther;
+            actor member = '서은석';
         }
 
-        requirement ku_jm_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M005 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'구정모';
-            attribute :>> securityRule = ChapterMembersDirectory::'구정모'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'구정모'.securityRuleOther;
+            actor member = '추수호';
         }
 
-        requirement kim_hj_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M006 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'김희재';
-            attribute :>> securityRule = ChapterMembersDirectory::'김희재'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'김희재'.securityRuleOther;
+            actor member = '구정모';
         }
 
-        requirement kim_dw_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M007 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'김다운';
-            attribute :>> securityRule = ChapterMembersDirectory::'김다운'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'김다운'.securityRuleOther;
+            actor member = '김희재';
         }
 
-        requirement park_hs_security : KnowledgeSharingSecurityRequirement {
+        requirement security_M008 : KnowledgeSharingSecurityRequirement {
             subject chapter = incoseKoreaChapterContext.chapter;
-            actor member = ChapterMembersDirectory::'박홍석';
-            attribute :>> securityRule = ChapterMembersDirectory::'박홍석'.securityRule;
-            attribute :>> securityRuleOther = ChapterMembersDirectory::'박홍석'.securityRuleOther;
+            actor member = '김다운';
+        }
+
+        requirement security_M009 : KnowledgeSharingSecurityRequirement {
+            subject chapter = incoseKoreaChapterContext.chapter;
+            actor member = '박홍석';
         }
     } // package SecurityRules
 } // package MemberNeedsAndSecurityRules
 
-##2_ASELCM LV2_Chapter_Organization/4_Member_and_Activity_Registry/3_ActivityLogs_2026_Q4.sysml##
-﻿package SprintMeetings_2026_Q4 {
+##2_ASELCM LV2_Chapter_Organization/4_Member_and_Activity_Registry/3_SprintMeetings_2026_Q4.sysml##
+package SprintMeetings_2026_Q4 {
     doc
     /* [1. Meeting 폴더 매핑]
-     * 2026년 4분기 킥오프 및 격주 온라인 스프린트 미팅 기록과 단기 Action Item 관리
+     * 2026년 4분기 킥오프 및 격주 온라인 스프린트 미팅 기록과 단기 Action Item 관리.
+     *
+     * [새 분기 회의록 추가] 파일명 'N_SprintMeetings_YYYY_Qn.sysml', 패키지명 'SprintMeetings_YYYY_Qn' 으로 만들고
+     * 스프린트(Sprint)와 회의(ChapterSprintMeeting) usage만 추가한다. 스키마 def는 수정하지 않는다.
      */
     private import ScalarValues::*;
     private import Time::*;
+    private import StakeholderDefinitions::*;
     private import ChapterMembersDirectory::*;
     private import ChapterSystemContext::*;
-    private import ChapterConOpsAndLifecycle::ConOps::*;
     private import ChapterSprint::*;
+
+    // =========================================================================
+    // 0. 스프린트 정의 (Action Item/과제는 이 usage를 ref로 참조)
+    // =========================================================================
+    item sprint1 : Sprint {
+        :>> sprintNo = 1;
+        attribute :>> endDate {
+            :>> year = 2026;
+            :>> month = 10;
+            :>> day = 23;
+        }
+    }
+
+    item sprint2 : Sprint {
+        :>> sprintNo = 2;
+        attribute :>> endDate {
+            :>> year = 2026;
+            :>> month = 11;
+            :>> day = 13;
+        }
+    }
+
+    item sprint3 : Sprint {
+        :>> sprintNo = 3;
+        attribute :>> endDate {
+            :>> year = 2026;
+            :>> month = 11;
+            :>> day = 27;
+        }
+    }
 
     // =========================================================================
     // 1. 2026-10-09 킥오프 미팅 Usage
     // =========================================================================
     action kickOffMeeting_20261009 : ChapterSprintMeeting {
-        in :>> mode = ExchangeModeKind::handsOnLabStyle;
+        in :>> mode = OnlineExchangeKind::projectLab;
 
         attribute :>> meetingDate : Iso8601DateTimeStructure {
             :>> year = 2026;
@@ -2470,42 +2736,33 @@ package MemberNeedsAndSecurityRules {
         }
         :>> location = "사당역 주변 셀스스토리 8인 회의실 / 우담정";
 
-        ref :>> attendees = (
-            ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'서은석',
-            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-            ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박홍석',
-        );
+        ref :>> attendees = ('이중윤', '서은석', '추수호', '최성열', '이수', '박홍석');
 
         :>> keyDecisions = (
             "싱크탱크(Think-Tank)가 아닌 실제 산출물을 만드는 도탱크(Do-Tank) 지향",
             "자동차는 SDV 비히클 전체, 우주는 임무 시스템 전체를 대상으로 Operational Stakeholder Requirement부터 하향식 모델링",
             "기업 내부 민감 데이터 문서화 금지, AI 및 공개 데이터를 기반으로 3개월 단위 레고 블록 모델링 수행",
-            "공식 소통은 카카오톡, 저장소는 Google Workspace 및 GitHub, 격주(2주) 웹 미팅 및 분기(3개월) 오프라인 모임 진행",
+            "공식 소통은 카카오톡, 저장소는 Google Workspace 및 GitHub, 격주(2주) 웹 미팅 및 분기(3개월) 오프라인 모임 진행"
         );
 
         out item :>> producedArtifact : ChapterArtifact {
             :>> title = "INCOSE Korea KickOff Meeting (20261009) - 회의록";
-            :>> category = ArtifactCategoryKind::meetingMinutes;
-            :>> owner = "추수호";
-            :>> repoFolderPath = "1. Meeting";
+            ref :>> owner = '추수호';
             :>> locationURL =
                 "https://drive.google.com/drive/folders/1-6HQj61Tbnf058-X5QRyGfeXwE0YXCtw?usp=drive_link";
         }
 
         action ai1_setupChannels : ActionItemTask {
-            ref :>> owner = ChapterMembersDirectory::'추수호';
+            ref :>> owner = '추수호';
             :>> taskDescription =
                 "카카오톡 단체방 개설 및 미참석 3명 동의 후 초대, 구글 워크스페이스 및 GitHub 세팅";
-            :>> dueDate = "Immediate";
+            :>> isImmediate = true;
         }
         action ai2_selectTargetSoI : ActionItemTask {
-            ref :>> owner = (
-                ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-                ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박홍석',
-            );
+            ref :>> owner = ('추수호', '최성열', '이수', '박홍석');
             :>> taskDescription =
                 "각자 모델링할 대상 시스템(Engineering Question & SoI) 선정 및 1차 웹 미팅 발표 준비";
-            :>> dueDate = "2026-10-23 (Sprint 1)";
+            ref :>> dueSprint = sprint1;
         }
     }
 
@@ -2513,7 +2770,7 @@ package MemberNeedsAndSecurityRules {
     // 2. 2026-10-30 1차 온라인 스프린트 미팅 Usage
     // =========================================================================
     action onlineMeeting1_20261030 : ChapterSprintMeeting {
-        in :>> mode = ExchangeModeKind::onlineReviewStyle;
+        in :>> mode = OnlineExchangeKind::onlineReview;
 
         attribute :>> meetingDate : Iso8601DateTimeStructure {
             :>> year = 2026;
@@ -2528,11 +2785,7 @@ package MemberNeedsAndSecurityRules {
         :>> location = "온라인 화상 회의 (Google Meet) 및 SE-Labs AI 협업 공간";
 
         ref :>> attendees = (
-            ChapterMembersDirectory::'이중윤', ChapterMembersDirectory::'추수호',
-            ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박홍석',
-            ChapterMembersDirectory::'박승훈', ChapterMembersDirectory::'최성열',
-            ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'김희재',
-            ChapterMembersDirectory::'최지원',
+            '이중윤', '추수호', '김다운', '박홍석', '박승훈', '최성열', '구정모', '김희재', '최지원'
         );
 
         :>> keyDecisions = (
@@ -2541,75 +2794,133 @@ package MemberNeedsAndSecurityRules {
             "기업별 기밀 정보를 철저히 배제하고 오픈소스 및 공통 문서를 기반으로 인코즈 코리아 챕터(INCOSE Korea Chapter) 레퍼런스 아키텍처로 공개 및 활용",
             "다목적 드론 시스템은 감시정찰, 공격, 보급 3대 임무별로 PESTEL-CTIMMRA 운영 맥락, 위협/환경 조건, 공급망, 가정/제약, 이해관계자 관심사 및 OV-1 시나리오(전형적 조건 및 최악 조건)를 각각 분리 작성",
             "효과 척도(MOE)는 시스템 내부 성능이 아닌 상위 임무 성공 여부 및 고객/공장 효과성(와우 포인트, 웨이퍼 수율/품질 등)에 초점을 맞추고, 직접 측정 가능한 말단 지표를 포함한 계층 구조로 정의",
-            "반도체 장비 등 컴포넌트 성격의 시스템은 내부 기능/인터록보다 상위 추상화 수준(Level 0 컨텍스트, 타 공정 연계, 수요처 공장별 베리에이션)부터 하향식으로 재정의",
+            "반도체 장비 등 컴포넌트 성격의 시스템은 내부 기능/인터록보다 상위 추상화 수준(Level 0 컨텍스트, 타 공정 연계, 수요처 공장별 베리에이션)부터 하향식으로 재정의"
         );
 
         out item :>> producedArtifact : ChapterArtifact {
             :>> title = "[Incose Korea Chapter] 1st Online Meeting (20261030) - 회의록";
-            :>> category = ArtifactCategoryKind::meetingMinutes;
-            :>> owner = "추수호";
-            :>> repoFolderPath = "1. Meeting/";
+            ref :>> owner = '추수호';
             :>> locationURL =
                 "https://drive.google.com/file/d/1fub4f8KklxVbGjWEzn0hmlWP-RMrTL4Q/view?usp=drive_link";
         }
 
         action ai1_unifyDocumentStructure : ActionItemTask {
-            ref :>> owner = (
-                ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'김다운',
-                ChapterMembersDirectory::'최성열', ChapterMembersDirectory::'박홍석',
-                ChapterMembersDirectory::'구정모',
-            );
+            ref :>> owner = ('추수호', '김다운', '최성열', '박홍석', '구정모');
             :>> taskDescription =
                 "전 워킹그룹 간 DoDAF 기반 AV-1, AV-2, OV-1 문서 및 모델의 목차 구조를 동일하게 통일하고, 작업 중 유용한 AI 프롬프트 및 워크플로우를 프로젝트 내 '6. Projects/3. AI Skills' 폴더에 공유";
-            :>> dueDate = "2026-11-13 (Sprint 2)";
+            ref :>> dueSprint = sprint2;
         }
 
         action ai2_aerospaceDroneConOps : ActionItemTask {
-            ref :>> owner = (
-                ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박승훈',
-                ChapterMembersDirectory::'박홍석', ChapterMembersDirectory::'이수',
-            );
+            ref :>> owner = ('김다운', '박승훈', '박홍석', '이수');
             :>> taskDescription =
                 "감시정찰/공격/보급 3가지 임무별 독립된 OV-1(정상/최악 조건 시나리오 포함) 작성, PESTEL-CTIMMRA 맥락 분석표/위협/공급망/제약/이해관계자 임무별 분리, 작전 효과 중심의 MOE 계층 구조화 및 OV-5b 액티비티 모델링 진행";
-            :>> dueDate = "2026-11-13 (Sprint 2)";
+            ref :>> dueSprint = sprint2;
         }
 
         action ai3_automotiveSdvConOps : ActionItemTask {
-            ref :>> owner = (ChapterMembersDirectory::'최성열', ChapterMembersDirectory::'추수호',);
+            ref :>> owner = ('최성열', '추수호');
             :>> taskDescription =
                 "PESTEL 분석 자료를 타 팀과 공유하고, 10~20년 장기 운용 가치 등 사용자에게 감동을 주는 와우 포인트(Wow Point) 및 MOE 계층 구조를 반영하여 세부 운용 시나리오 보완 및 액티비티 모델(OV-5b) 개발";
-            :>> dueDate = "2026-11-13 (Sprint 2)";
+            ref :>> dueSprint = sprint2;
         }
 
         action ai4_semiconductorContextAndVariation : ActionItemTask {
-            ref :>> owner = ChapterMembersDirectory::'김희재';
+            ref :>> owner = '김희재';
             :>> taskDescription =
                 "EUV 제니스 장비 내부 기능 대신 상위 추상화 수준(Level 0)에서 리소그래피 공정 및 타 공정과의 외부 컨텍스트를 먼저 정의하고, 납품될 다양한 반도체 공장 환경에 대한 베리에이션(Variation) 및 공장 수율/품질 관점의 MOE 설정";
-            :>> dueDate = "2026-11-13 (Sprint 2)";
+            ref :>> dueSprint = sprint2;
         }
 
         action ai5_roboticsDisasterConOps : ActionItemTask {
-            ref :>> owner = (
-                ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'최지원',
-                ChapterMembersDirectory::'박홍석',
-            );
+            ref :>> owner = ('구정모', '최지원', '박홍석');
             :>> taskDescription =
                 "재난 탐색 및 구조 지원 로봇 시스템의 통일된 AV-1, OV-1 목차 구조 반영 및 기본(Nominal) 운용 시나리오와 최악 조건(통신 두절, 침수 등) 시나리오 구체화";
-            :>> dueDate = "2026-11-13 (Sprint 2)";
+            ref :>> dueSprint = sprint2;
         }
 
         action ai6_seLabsWorkspaceAndSeminar : ActionItemTask {
-            ref :>> owner = ChapterMembersDirectory::'박홍석';
+            ref :>> owner = '박홍석';
             :>> taskDescription =
                 "SE-Labs AI 내 INCOSE Korea Chapter 팀 공간 공유/초대 및 팀원들을 위한 SE-Labs AI 모델링 도구 사용법 세미나 일정 조율 및 진행 ('4. Tools' 연계)";
-            :>> dueDate = "Immediate";
+            :>> isImmediate = true;
         }
 
         action ai7_nextMeetingVote : ActionItemTask {
-            ref :>> owner = ChapterMembersDirectory::'추수호';
+            ref :>> owner = '추수호';
             :>> taskDescription =
                 "'7. Source' 폴더(PESTEL-CTIMMRA, AI 프롬프트, MBSE 쿡북 자료) 안내 및 격주 금요일 기준 차기(2차) 온라인 미팅 일정 확정 투표 진행";
-            :>> dueDate = "2026-11-04";
+            attribute :>> dueDate : Iso8601DateTimeStructure {
+                :>> year = 2026;
+                :>> month = 11;
+                :>> day = 4;
+            }
+        }
+    }
+
+    // =========================================================================
+    // 3. 2026-11-13 2차 온라인 스프린트 미팅 Usage
+    // =========================================================================
+
+    action onlineMeeting2_20261113 : ChapterSprintMeeting {
+        in :>> mode = OnlineExchangeKind::onlineReview;
+
+        attribute :>> meetingDate : Iso8601DateTimeStructure {
+            :>> year = 2026;
+            :>> month = 11;
+            :>> day = 13;
+            :>> hour = 19;
+            :>> minute = 53;
+            :>> second = 0;
+            :>> hourOffset = 9; // KST 시차 (UTC+9)
+            :>> minuteOffset = 0;
+        }
+        :>> location = "온라인 화상 회의 (Google Meet) 및 SE-Labs AI 협업 공간";
+
+        ref :>> attendees = ('이중윤', '추수호', '박홍석', '최성열', '김희재');
+
+        :>> keyDecisions = (
+            "오토모티브 워킹그룹(2. Automotive) 대상 시스템을 '인간-AI-다중로봇 공생형 전주기 자율주행 모빌리티 복합체계(SoS)'로 확장 채택하고, 7대 구성 시스템(인간 아키텍트, 생성형 AI 오케스트레이션, SDV 플릿, 다종 전주기 물리로봇 작업단, 마이크로팩토리/정비소 디포, 외부 V2X/스마트그리드, 검증 및 블랙박스/리사이클링 관리 시스템)으로 정의",
+            "생성형 AI 설계 결과물 검증 시 AI가 생성한 평가 루브릭에 의존하지 않고, 아키텍처 모델을 설명 가능한 AI(Explainable AI) 형태로 작성하여 인간 아키텍트가 직접 읽고 검토·합의·승인하는 거버넌스 확립",
+            "이해관계자/사용자 관점의 운영 효과 척도(MOE)와 개발자 관점의 시스템 성능 척도(MOP)를 명확히 분리 정의하고, 설계 초기(V-사이클 좌측 상단 개념 설계 단계)에서 시뮬레이션과 실험, 현실적인 해저드 시나리오 기반 FMEA를 통해 MOE 달성 여부를 사전 검증",
+            "단일 시스템 및 복합체계(SoS) 개발 시 포트폴리오 관점의 Capability View(CV)는 생략하고, AV-1, AV-2, OV-1(유스케이스별 운영 개념도, 줄글 시나리오, MOE 통합), OV-5b(액티비티 모델 및 박스별 목표값/한계값 성능 기입), SV-10c(시스템 기능 흐름도 및 인간을 머신 펑션으로 포함한 수행 주체 할당) 순서로 모델링 절차 표준화",
+            "SE-Labs AI 내 상세 연결 패널을 활용하여 운영 액티비티(OV-5b)와 시스템 펑션(SV-10c) 간 할당(Allocation) 및 구현(implementedBy / traceTo) 추적성 관계를 설정",
+            "SE-Labs AI의 메타모델 관리 모드(Definition)와 사용 모드(Usage) 분리 구조를 적용하되, 프로젝트 거버넌스를 위해 표준 메타모델 변경은 통제(Change Process 적용)하고 기업별 독립 프로세스는 사용자 정의(User-defined) 방식으로 확장 지원하며, VS Code 탐색기 및 GitHub 베이스라인 연동을 통해 형상 관리 수행",
+            "반도체 워킹그룹(4. Semiconductor)의 EUV 제니스(EUV Zenith) 진공 펌프 시스템은 ASML 노광 장비(스캐너/소스)의 진공 및 수소 환경 조성을 미션 서비스(수소 회수, 진공 펌핑, 산소 누설 감시, 공기 기반 수소 희석 배출 및 공급 허가 인터록 신호 공유)로 정의하고, 규격 한계값 외에 자체 개발 목표값(10% 마진 등)과 허용 산포(3시그마) 통제 기준 및 내·외부 최악 조건(부품 산포, 정전/전력 불안정, 지진 등) 시나리오를 모델에 반영"
+        );
+
+        out item :>> producedArtifact : ChapterArtifact {
+            :>> title = "[Incose Korea Chapter] 2nd Online Meeting (20261113) - 회의록 및 스크립트";
+            ref :>> owner = '추수호';
+            :>> locationURL = "TBD"; // Google Drive 업로드 후 링크 업데이트 필요
+        }
+
+        action ai1_automotiveMoeMopAndScopeRefinement : ActionItemTask {
+            ref :>> owner = ('추수호', '최성열');
+            :>> taskDescription =
+                "사용자 관점의 운영 효과 척도(MOE)와 개발자 관점의 시스템 성능 척도(MOP)를 분리 정의하여 시나리오 필요성과 연계 보강하고, 다종 전주기 물리로봇 작업단(CS4)의 개념 스코프를 외부 로봇 전문 기업(보스턴 다이노믹스 등)에 구체적으로 제안 가능한 수준으로 상세화";
+            ref :>> dueSprint = sprint3;
+        }
+
+        action ai2_automotiveArchitectureModelingAndPresentation : ActionItemTask {
+            ref :>> owner = ('추수호', '최성열');
+            :>> taskDescription =
+                "전체 운영 시나리오 목록 중 핵심 메인 시나리오(5~6개)를 선정하여 인간 검토 기반으로 MOE 달성 여부를 확인한 뒤, SE-Labs에서 OV-1 보완, OV-5b 액티비티 모델(목표값/한계값 포함) 및 SV-10c 시스템 기능 모델 생성, 액티비티-펑션 간 구현(Allocation/Implements) 관계 매핑을 수행하고 차기 회의에서 발표";
+            ref :>> dueSprint = sprint3;
+        }
+
+        action ai3_seLabsDiscussionInviteShare : ActionItemTask {
+            ref :>> owner = '박홍석';
+            :>> taskDescription =
+                "SE-Labs 내 INCOSE Korea Chapter 조직 및 프로젝트 토론탭/이슈 게시판을 활용할 수 있도록 초대 링크를 채팅방에 공유";
+            :>> isImmediate = true;
+        }
+
+        action ai4_semiconductorWorstCaseAndMrsSpec : ActionItemTask {
+            ref :>> owner = '김희재';
+            :>> taskDescription =
+                "EUV 제니스 장비의 한계 규격 외 자체 개발 목표값 및 허용 산포(3시그마) 통제 목표를 설정하고, 내·외부 최악 조건(부품 산포, 정전, 전력 흔들림, 지진 등) 시나리오와 시장 요구사항 명세(MRS) 기반의 경쟁사 대비 차별화 포인트(Beating Point)를 반영하여 시스템 모델 설계 및 기능 규격 산출 후 발표 자료 업데이트";
+            ref :>> dueSprint = sprint3;
         }
     }
 } // package SprintMeetings_2026_Q4
@@ -2618,12 +2929,17 @@ package MemberNeedsAndSecurityRules {
 package ModelingAssignments_and_Feedbacks {
     doc
     /* [5. Architecture Methodologies & 6. Projects/2. references 매핑]
-     * SE 모델링 과제 마스터 정의, 실무 가이드 아티팩트 및 학술자문단(교수진) 피드백 레코드 관리
+     * SE 모델링 과제 마스터 정의, 실무 가이드 아티팩트 및 학술자문단 피드백 레코드 관리.
+     * 새 과제는 'action <이름> : ModelingAssignment' usage 1개를 추가하고
+     * 필수 체크포인트는 constraint def를 ref로 참조한다(설명 문자열 금지).
      */
     private import ScalarValues::*;
     private import ChapterMembersDirectory::*;
     private import ChapterSystemContext::*;
     private import ChapterSprint::*;
+    private import SprintMeetings_2026_Q4::*;
+    private import WorkingGroupsAndRoles::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // =========================================================================
     // 1. 실무 가이드 및 방법론 레퍼런스 아티팩트
@@ -2631,8 +2947,8 @@ package ModelingAssignments_and_Feedbacks {
     item blackBoxConOpsGuide_PDF : ChapterArtifact {
         :>> title = "SE 블랙박스 정의 및 운용시나리오(ConOps) 개발 실무 가이드";
         :>> category = ArtifactCategoryKind::assignmentGuide;
-        :>> owner = "추수호 / 학술자문단";
-        :>> repoFolderPath = "6. Projects/2. references";
+        ref :>> owner = ('추수호', chapterOrganization.academicAdvisors.assignee);
+        ref :>> folder = incoseKoreaChapterContext.chapter.repository.folder6_Projects.sub2_References;
         :>> locationURL =
             "https://drive.google.com/file/d/1QX67QduPw5aJVv79QpfobkCHERMwHphw/view?usp=drive_link";
     }
@@ -2640,19 +2956,18 @@ package ModelingAssignments_and_Feedbacks {
     item pestelAndMbseCookbook_Source : ChapterArtifact {
         :>> title = "PESTEL-CTIMMRA 분석 템플릿, DoDAF 2.02 가이드 및 MBSE 쿡북 리소스";
         :>> category = ArtifactCategoryKind::methodologyReference;
-        :>> owner = "이중윤 / 추수호";
-        :>> repoFolderPath = "7. Source";
-        :>> locationURL = "7. Source/";
+        ref :>> owner = ('이중윤', '추수호',);
+        ref :>> folder = incoseKoreaChapterContext.chapter.repository.folder7_Source;
     }
 
     // =========================================================================
-    // 2. 과제 2: 블랙박스 정의 및 운용시나리오(ConOps) 개발 마스터 정의
+    // 2. 과제 1·2: 대상시스템 선정, 블랙박스 정의 및 운용시나리오(ConOps) 개발 마스터 정의
     // =========================================================================
     action assignment1_2_BlackBoxAndConOps : ModelingAssignment {
         :>> assignmentNo = (1, 2);
         :>> stage = (
-            SEAssignmentStageKind::Stage1_SoIAndQuestionSelection,
-            SEAssignmentStageKind::Stage2_BlackBoxAndConOps
+            SEAssignmentStageKind::stage1_SoIAndQuestionSelection,
+            SEAssignmentStageKind::stage2_BlackBoxAndConOps
         );
         :>> startDate {
             :>> year = 2026;
@@ -2664,45 +2979,36 @@ package ModelingAssignments_and_Feedbacks {
         :>> scaffoldPackageName = "LV1_BlackBox_ConOps_Scaffold";
 
         ref :>> owner = (
-            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-            ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'이수',
-            ChapterMembersDirectory::'박승훈', ChapterMembersDirectory::'김다운',
-            ChapterMembersDirectory::'박홍석', ChapterMembersDirectory::'김희재',
-            ChapterMembersDirectory::'최지원'
+            '추수호', '최성열', '구정모', '이수', '박승훈', '김다운', '박홍석', '김희재', '최지원'
         );
         :>> taskDescription =
-            "2035년 목표 시점 및 DoDAF 2.02(AV-1, AV-2, OV-1, OV-5b) 구조와 LV1_BlackBox_ConOps_Scaffold를 결합하여 워킹그룹별 대상시스템(SoI)의 임무/MOE 계층, PESTEL-CTIMMRA 운용시점 인프라 가정, 3대 외부환경 컨텍스트 및 5-Tuple 블랙박스 ConOps(Nominal/최악 조건) 작성";
-        :>> dueDate = "2026-11-13 (Sprint 2)";
+            "2035년 목표 시점 및 DoDAF 2.02(AV-1, AV-2, OV-1, OV-5b) 구조와 LV1_BlackBox_ConOps_Scaffold를 결합하여 워킹그룹별 대상시스템(SoI)의 임무/MOE 계층, PESTEL-CTIMMRA 운용시점 인프라 가정, 외부환경 컨텍스트 및 5-Tuple 블랙박스 ConOps(Nominal/최악 조건) 작성";
+        ref :>> dueSprint = sprint2;
 
-        :>> mandatoryCheckpoints = (
-            "1. [교수님 피드백 1] 운용 개념(ConOps)이 대상시스템의 존재목적(임무 또는 사업목표)을 달성하는 모습을 표현하고 satisfy 관계로 연결할 것",
-            "2. [교수님 피드백 2] 임무/사업 목표 서술(What/Why) 및 달성 판정용 운용효과성측정지표(MOE)를 고객/임무/공장 효과 중심의 계층 구조로 정의하고 목표값(Target)/한계값(Threshold)/단위(Unit)를 지정할 것",
-            "3. [교수님 피드백 3] 2035년 운용 시점의 PESTEL-CTIMMRA 인프라 가정을 명시하고, 블랙박스 SoI가 외부 환경(조직/물리/자연)과 상호작용하는 것에 초점을 두고 시나리오를 작성할 것",
-            "4. [실무 가이드 6대 Gate] Whole-System(Gate 1), Solution-Free 블랙박스(Gate 2), 시점 4대 전제 연계(Gate 3), ODD 3대 장소 그룹핑(Gate 4), 3대 외부 범위 각 2개 이상 및 외란 아이템화(Gate 5), 고립 액터 방지(Gate 6) 준수"
-        );
+        // 통과 필수 요건: 설명 문자열 대신 constraint def 참조 (기준 설명은 constraint def의 doc에만 있다).
+        // 통합 승인 게이트는 학술자문단 피드백 1~3 및 가이드 Gate 1~6 constraint를 모두 포함한다.
+        ref constraint cp_approvalGate : ReferenceModelAssignmentApprovalGate :> mandatoryCheckpoints;
 
-        // 학술자문단(교수진) 1차·2차 피드백 레코드 분리 관리
-        part profFeedback_1_KickOff : AdvisoryFeedback :> advisoryFeedbacks {
-            ref :>> reviewers = ChapterMembersDirectory::'이중윤';
-            :>> feedbackDate = "2026-10-09";
+        // 학술자문단 1차·2차 피드백 레코드 분리 관리 (feedbackDate는 sourceMeeting 일시에서 파생)
+        item profFeedback_1_KickOff : AdvisoryFeedback :> advisoryFeedbacks {
+            ref :>> reviewers = '이중윤';
+            ref :>> sourceMeeting = kickOffMeeting_20261009;
             :>> feedbackPoints = (
                 "1. 운용 개념은 대상시스템의 존재목적(임무 또는 사업목표)을 달성하는 모습을 표현해야 함.",
                 "2. 임무/사업 목표에 대한 서술 및 달성 여부에 대한 운용효과성측정지표(MOE) 정의 및 목표값/한계값/단위 지정 (수치 자체는 정확할 필요 없음).",
                 "3. 운용 시나리오 작성 시 블랙박스 개념 강조 -> 블랙박스 대상시스템이 외부 환경과 상호작용하는 것에 초점을 두고 운용 시나리오 작성 (이 외부 환경에 대한 가정은 운용 시점의 인프라에 대한 가정임)."
             );
-            :>> isResolvedInModel = false;
         }
 
-        part profFeedback_2_OnlineSprint1 : AdvisoryFeedback :> advisoryFeedbacks {
-            ref :>> reviewers = ChapterMembersDirectory::'이중윤';
-            :>> feedbackDate = "2026-10-30";
+        item profFeedback_2_OnlineSprint1 : AdvisoryFeedback :> advisoryFeedbacks {
+            ref :>> reviewers = '이중윤';
+            ref :>> sourceMeeting = onlineMeeting1_20261030;
             :>> feedbackPoints = (
                 "1. 2035년 장기 시점 기준으로 전 워킹그룹의 AV-1, AV-2, OV-1 목차 구조를 통일하고 PESTEL-CTIMMRA 맥락 분석을 반영할 것.",
                 "2. 다목적 시스템(드론 등)은 임무별(감시정찰/공격/보급)로 운영 맥락과 OV-1(정상/최악 조건)을 독립 분리할 것.",
                 "3. MOE는 시스템 내부 성능이 아닌 상위 임무 성공률, 사용자 와우 포인트(Wow Point), 수요처 공장 수율/품질 등 상위 효과성에서 출발해 측정 가능한 말단 지표로 계층화할 것.",
                 "4. 반도체 장비 등 하위 시스템 성격의 경우 내부 인터록/기능보다 Level 0 상위 공정 컨텍스트와 납품 공장별 베리에이션(Variation)부터 하향식으로 정의할 것."
             );
-            :>> isResolvedInModel = false;
         }
     }
 } // package ModelingAssignments_and_Feedbacks
@@ -2710,13 +3016,15 @@ package ModelingAssignments_and_Feedbacks {
 ##2_ASELCM LV2_Chapter_Organization/4_Member_and_Activity_Registry/5_WG_Submissions_Tracker.sysml##
 package WG_Submissions_Tracker {
     doc
-    /* [6. Projects/1. Domains 하위 4대 도메인 폴더 매핑]
-     * 1. Aerospace, 2. Automotive, 3. IT, 4. Semiconductor 워킹그룹별 과제 제출물 및 Gate 통과 현황 트래킹
+    /* [6. Projects/1. Domains 하위 도메인 폴더 매핑]
+     * 워킹그룹별 과제 제출물 및 Gate 통과 현황 트래킹.
+     * 새 워킹그룹의 제출은 'item <이름> : AssignmentSubmission' usage 1개만 추가한다.
+     * 도메인, SoI, 저장 폴더, 소유자, 제출자 기본값은 workingGroup(WorkingGroup)에서 파생되므로 여기서 다시 적지 않는다.
      */
     private import ScalarValues::*;
     private import ChapterMembersDirectory::*;
-    private import ChapterSystemContext::*;
     private import ChapterSprint::*;
+    private import WorkingGroupsAndRoles::*;
     private import ModelingAssignments_and_Feedbacks::*;
 
     // =========================================================================
@@ -2724,25 +3032,14 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item aerospaceWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "1. Aerospace Working Group (Space & Drone)";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
-            ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박홍석',
-        );
+        ref :>> workingGroup = chapterOrganization.aerospaceWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title =
                 "Multi-Purpose Quadcopter Drone System (Surveillance, Strike, Logistics) Reference Model";
-            :>> owner = "Aerospace WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/1. Aerospace";
-            :>> locationURL = "6. Projects/1. Domains/1. Aerospace/";
-            :>> domainName = "1. Aerospace (Defense & Space/UAV)";
-            :>> targetSoIName = "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 임무 시스템)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -2751,23 +3048,16 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item automotiveWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "2. Automotive SDV Working Group";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-        );
+        ref :>> workingGroup = chapterOrganization.automotiveWG;
         :>> status = SubmissionStatusKind::inProgress;
+        // TODO(확인 필요): Automotive WG 참여자('추수호', '최성열', '이의범')와 제출자 목록이 달라 재정의로 남겼다.
+        //   '이의범'이 제출에 참여한다면 이 재정의를 삭제하고(기본값 = WG 참여자), 아니면 WG 참여자 목록을 정정한다.
+        ref :>> submitters = ('추수호', '최성열',);
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "2035 Software-Defined Vehicle (SDV) Whole-System Reference Model";
-            :>> owner = "Automotive SDV WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/2. Automotive";
-            :>> locationURL = "6. Projects/1. Domains/2. Automotive/";
-            :>> domainName = "2. Automotive (SDV & Smart Mobility)";
-            :>> targetSoIName = "2035 소프트웨어 중심 자동차 (SDV Whole-System Vehicle)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -2776,24 +3066,13 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item itRoboticsWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "3. IT & Robotics System Working Group";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'최지원',
-            ChapterMembersDirectory::'박홍석', ChapterMembersDirectory::'심정환',
-        );
+        ref :>> workingGroup = chapterOrganization.itSwWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "Disaster Search and Rescue Support Robot System Reference Model";
-            :>> owner = "IT & Robotics WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/3. IT";
-            :>> locationURL = "6. Projects/1. Domains/3. IT/";
-            :>> domainName = "3. IT (Robotics & Smart Disaster Response System)";
-            :>> targetSoIName = "2035 재난 탐색 및 구조 지원 로봇 시스템";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -2802,21 +3081,13 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item semiconductorWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "4. Semiconductor System Working Group";
-        ref :>> submitters = ChapterMembersDirectory::'김희재';
+        ref :>> workingGroup = chapterOrganization.semiconductorWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "EUV Zenith Semiconductor Equipment Fab-Context Reference Model";
-            :>> owner = "Semiconductor WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/4. Semiconductor";
-            :>> locationURL = "6. Projects/1. Domains/4. Semiconductor/";
-            :>> domainName = "4. Semiconductor (EUV Lithography & Sub-Fab System)";
-            :>> targetSoIName = "2035 EUV 제니스 반도체 장비 시스템 (Level 0 Fab Context)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 } // package WG_Submissions_Tracker
@@ -2825,36 +3096,41 @@ package WG_Submissions_Tracker {
 package StakeholdersConcerns {
     doc
     /* [이해관계자 관심사(Concerns) 정의]
-     * 통합된 Stakeholders, ActorAndInterfaces, SystemContext 구조를 기반으로
-     * 8대 핵심 관심사를 정의하고, 이를 4대 핵심 뷰포인트(Viewpoints)에 빈틈없이 프레임(frame)함:
+     * Stakeholders, ActorAndInterfaces, SystemContext 구조를 기반으로
+     * 핵심 관심사를 정의하고, 이를 Viewpoints에 빈틈없이 프레임(frame)한다.
+     * 공통 subject(theChapter)와 stakeholder(member)는 KoreanChapterConcern에 한 번만 두고,
+     * 파생 Concern에는 추가되는 stakeholder만 남긴다.
      *
-     * 1. 'administrative operations viewpoint' 매핑 관심사 (3종):
+     * 1. 'administrative operations viewpoint' 매핑 관심사:
      *    - OperationalFlowConcern (운영 흐름 및 정기 보고)
      *    - KnowledgeAssetConcern (지식 저장소 및 참조모델/아티팩트 형상 관리)
-     *    - LifecycleEvolutionConcern (챕터 성장 단계 전환 및 5대 핵심 MoE 관리)
-     * 2. 'member value viewpoint' 매핑 관심사 (3종):
+     *    - LifecycleEvolutionConcern (챕터 성장 단계 전환 및 핵심 MoE 관리)
+     * 2. 'member value viewpoint' 매핑 관심사:
      *    - StakeholderIdentificationConcern (회원 도메인·전문성·기여 자원 식별)
      *    - ValueRationaleValidationConcern (회원 핵심 가치 What, 도출 근거 Why, 검증 기준 Validation)
      *    - RiskSecurityConcern (기업 IP 보호 및 데이터 익명화 보안 규칙)
-     * 3. 'incose alignment viewpoint' 매핑 관심사 (1종):
+     * 3. 'incose alignment viewpoint' 매핑 관심사:
      *    - BoundaryDependencyConcern (INCOSE 본부/섹터/TechOps 및 툴 벤더 외부 의존성)
-     * 4. 'peer society connection viewpoint' 매핑 관심사 (1종):
+     * 4. 'peer society connection viewpoint' 매핑 관심사:
      *    - CapabilityValueConcern (국내 타 학회 KOSSE/KCOSE 대비 고유 역량 및 상호보완성)
+     * 5. 'governance and quality viewpoint' 매핑 관심사:
+     *    - GovernanceQualityConcern (LV3 거버넌스 규약, 품질 게이트 및 승인 상태)
      */
 
-    // 앞서 통합한 Comprehensive 패키지 요소들을 import
     private import StakeholderDefinitions::*;
     private import ExternalActorsAndInterfaces::*;
     private import ChapterSystemContext::*;
+    private import GovernanceSystemAndTooling::GovernanceSystem::*;
 
-    concern def KoreanChapterConcern;
-
-    // -------------------------------------------------------------------------
-    // [Group 1] Member Value Viewpoint 매핑 관심사 (3종)
-    // -------------------------------------------------------------------------
-    concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
+    concern def KoreanChapterConcern {
         subject theChapter : KoreaChapter;
         stakeholder member : Member;
+    }
+
+    // -------------------------------------------------------------------------
+    // [Group 1] Member Value Viewpoint 매핑 관심사
+    // -------------------------------------------------------------------------
+    concern def StakeholderIdentificationConcern :> KoreanChapterConcern {
         require constraint {
             doc
             /* 시스템(챕터)과 직접 상호작용하는 회원 액터들의 소속, 도메인, 지역, 가용 기여 자원 식별. */
@@ -2862,8 +3138,6 @@ package StakeholdersConcerns {
     }
 
     concern def ValueRationaleValidationConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
         require constraint {
             doc
             /* 시스템이 이해관계자에게 제공해야 할 핵심 가치(What), 도출
@@ -2874,8 +3148,6 @@ package StakeholdersConcerns {
     }
 
     concern def RiskSecurityConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
         require constraint {
             doc
             /* 회원들이 소속 기업의 지적 재산(IP)이나 민감한 기술 정보를
@@ -2886,11 +3158,10 @@ package StakeholdersConcerns {
     }
 
     // -------------------------------------------------------------------------
-    // [Group 2] Administrative Operations Viewpoint 매핑 관심사 (3종)
+    // [Group 2] Administrative Operations Viewpoint 매핑 관심사
     // -------------------------------------------------------------------------
     concern def OperationalFlowConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
+        subject :>> theChapter; // Syside: stakeholder를 추가하는 Concern은 subject 재선언이 첫 파라미터여야 함
         stakeholder sector : ContextINCOSESector;
         require constraint {
             doc
@@ -2901,8 +3172,6 @@ package StakeholdersConcerns {
     }
 
     concern def KnowledgeAssetConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
         require constraint {
             doc
             /* 챕터 내에서 생성되는 지식(회의록, 가이드, LV1 참조모델 코드)은 어떤 구조를
@@ -2912,22 +3181,19 @@ package StakeholdersConcerns {
     }
 
     concern def LifecycleEvolutionConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
         require constraint {
             doc
             /* 시스템(챕터)이 시간에 따라 어떻게 상태(Phase 1 -> Phase 2 -> Phase 3)가 변하고
-             * 5대 핵심 성과 지표(Core MoEs)를 통해 진화하는가.
+             * 핵심 성과 지표(Core MoEs)를 통해 진화하는가.
              */
         }
     }
 
     // -------------------------------------------------------------------------
-    // [Group 3] INCOSE Alignment Viewpoint 매핑 관심사 (1종)
+    // [Group 3] INCOSE Alignment Viewpoint 매핑 관심사
     // -------------------------------------------------------------------------
     concern def BoundaryDependencyConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
+        subject :>> theChapter;
         stakeholder vendor : ContextToolVendor;
         stakeholder techOps : ContextTechnicalOperations;
         require constraint {
@@ -2939,17 +3205,31 @@ package StakeholdersConcerns {
     }
 
     // -------------------------------------------------------------------------
-    // [Group 4] Peer Society Connection Viewpoint 매핑 관심사 (1종)
+    // [Group 4] Peer Society Connection Viewpoint 매핑 관심사
     // -------------------------------------------------------------------------
     concern def CapabilityValueConcern :> KoreanChapterConcern {
-        subject theChapter : KoreaChapter;
-        stakeholder member : Member;
+        subject :>> theChapter;
         stakeholder peerMember : PeerSocietyMember;
         stakeholder peerOrg : ContextPeerSocietyOrganization;
         require constraint {
             doc
             /* 이 시스템이 궁극적으로 한국의 시스템 엔지니어링 생태계
              * (상위 시스템)에 타 학회(KOSSE/KCOSE) 대비 어떤 고유한 역량(Capability)을 제공하는가.
+             */
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // [Group 5] Governance and Quality Viewpoint 매핑 관심사
+    // -------------------------------------------------------------------------
+    concern def GovernanceQualityConcern :> KoreanChapterConcern {
+        subject :>> theChapter;
+        stakeholder governance : GovernanceSystemContext;
+        require constraint {
+            doc
+            /* LV3 거버넌스가 하달하는 모델링 규약과 품질 게이트(학술자문단 피드백, 가이드 Gate)를
+             * 워킹그룹 제출물이 충족하는지, 그리고 승인 상태(status)가 게이트 판정 결과와
+             * 모순되지 않는지를 어떻게 추적하는가.
              */
         }
     }
@@ -2960,7 +3240,7 @@ package ChapterViewpoints {
     private import StakeholdersConcerns::*;
 
     viewpoint 'administrative operations viewpoint' {
-        // 행정/운영 관점이 다루는 3대 관심사(운영 흐름 + 지식자산/참조모델 관리 + 수명주기/MoE 진화)를 모두 frame
+        // 행정/운영 관점이 다루는 관심사(운영 흐름 + 지식자산/참조모델 관리 + 수명주기/MoE 진화)를 모두 frame
         frame concern operationalFlow : OperationalFlowConcern;
         frame concern knowledgeAsset : KnowledgeAssetConcern;
         frame concern lifecycleEvolution : LifecycleEvolutionConcern;
@@ -2970,13 +3250,13 @@ package ChapterViewpoints {
             /* 1. Chapter의 효과적이고 지속적인 운영을 위한 행정적인 관점
              * - 운영 흐름 및 과제 스프린트 프로세스 (OperationalFlowConcern)
              * - 지식 저장소(KnowledgeRepository) 및 LV1 참조모델 형상 관리 (KnowledgeAssetConcern)
-             * - 향후 챕터 성장 단계(Phase 1->2->3) 및 5대 핵심 MoE 전환 규칙 (LifecycleEvolutionConcern)
+             * - 향후 챕터 성장 단계(Phase 1->2->3) 및 핵심 MoE 전환 규칙 (LifecycleEvolutionConcern)
              */
         }
     }
 
     viewpoint 'member value viewpoint' {
-        // 회원 가치 관점이 다루는 3대 관심사(회원 식별 + 핵심 가치/근거/검증 + 기업 보안 규칙)를 모두 frame
+        // 회원 가치 관점이 다루는 관심사(회원 식별 + 핵심 가치/근거/검증 + 기업 보안 규칙)를 모두 frame
         frame concern stakeholderId : StakeholderIdentificationConcern;
         frame concern valueRationale : ValueRationaleValidationConcern;
         frame concern riskSecurity : RiskSecurityConcern;
@@ -3015,23 +3295,40 @@ package ChapterViewpoints {
              */
         }
     }
+
+    viewpoint 'governance and quality viewpoint' {
+        frame concern governanceQuality : GovernanceQualityConcern;
+
+        require constraint {
+            doc
+            /* 5. LV3 거버넌스와 품질 보증 관점
+             * - 모델링 규약, 학술자문단 피드백 및 가이드 Gate 충족 여부와 승인 상태 추적 (GovernanceQualityConcern)
+             * - 워킹그룹 제출물의 게이트 판정 결과와 제출 상태(status)의 일관성 확인
+             */
+        }
+    }
 } // package ChapterViewpoints
 
 ##2_ASELCM LV2_Chapter_Organization/5_Views_and_Viewpoints/3_ChapterViews.sysml##
 package ChapterViews {
-    private import ChapterViewpoints::*; // [개선] 중복 import 제거
+    private import ChapterViewpoints::*;
     private import SysideViews::*;
     private import SysideViews::TableViewDefinitions::*;
     private import SysideViews::MatrixViewDefinitions::*;
 
+    // TODO(확인 필요): 아래 TableView 열 정의는 'ColumnType::attributeValue { attributeName = "..."; }' 형태를 쓴다.
+    //   ':>> attributeName = "..."' 로 바꾸면 Syside 0.10.x 에서 reference-error('No Feature named attributeName')가 발생하므로
+    //   현재 표기를 유지한다. 다만 'syside table export' 결과의 셀 값이 비어 있는 것은 변경 전 모델에서도 동일했다
+    //   (표기 문제인지 export 기능 한계인지 UI에서 확인 필요).
+
     // =========================================================================
-    // 1. 4대 기본 아키텍처 뷰 (8대 Concern 대상 모델 요소 전체 노출)
+    // 1. 기본 아키텍처 뷰 (Concern 대상 모델 요소 노출)
     // =========================================================================
     view AdministrativeOperationsView {
         doc
         /* [매핑 관심사: OperationalFlowConcern, KnowledgeAssetConcern, LifecycleEvolutionConcern]
          * 행정/운영 흐름(ConOps), 지식저장소(KnowledgeRepository), 스프린트 과제,
-         * 워킹그룹 조직 및 수명주기(Lifecycle & 5대 MoE 게이트) 노출
+         * 워킹그룹 조직 및 수명주기(Lifecycle & MoE 게이트) 노출
          */
         satisfy 'administrative operations viewpoint';
         expose ChapterSystemContext::KnowledgeRepository;
@@ -3051,10 +3348,13 @@ package ChapterViews {
     view MemberValueView {
         doc
         /* [매핑 관심사: StakeholderIdentificationConcern, ValueRationaleValidationConcern, RiskSecurityConcern]
-         * 회원 속성(도메인, 관심사, 제공 자원), 회원별 가치 요구사항(Needs) 및 기업 보안 규칙(SecurityRules) 노출
+         * 회원 속성 정의, 회원 집합, 회원별 가치 요구사항(Needs) 및 기업 보안 규칙(SecurityRules) 노출.
+         * 회원 디렉터리 패키지 전체(::*)는 개인별 usage까지 모두 펼쳐지므로 expose하지 않고 필요한 요소만 노출한다.
+         * TODO(확인 필요): chapterMemberRoster 를 expose 했을 때 subset 된 개별 회원이 렌더링되는지 확인.
          */
         satisfy 'member value viewpoint';
-        expose ChapterMembersDirectory::*;
+        expose StakeholderDefinitions::IncoseKoreaChapterMember;
+        expose ChapterMembersDirectory::chapterMemberRoster;
         expose MemberNeedsAndSecurityRules::ChapterMembers_Needs::*;
         expose MemberNeedsAndSecurityRules::SecurityRules::*;
     }
@@ -3081,11 +3381,26 @@ package ChapterViews {
         satisfy 'peer society connection viewpoint';
         expose ExternalActorsAndInterfaces::ContextPeerSocietyOrganization;
         expose ExternalActorsAndInterfaces::PeerBenchmarkItem;
-        expose StakeholderDefinitions::PeerSociety;
+        expose StakeholderDefinitions::PeerSocietyMember;
         expose ChapterSystemContext::ChapterCapability;
         expose ChapterSystemContext::ChapterInContext::globalStandardFastAdoption;
         expose ChapterSystemContext::ChapterInContext::handsOnToolPractice;
         expose ChapterSystemContext::ChapterInContext::domainReferenceModelCreation;
+    }
+
+    view GovernanceQualityView {
+        doc
+        /* [매핑 관심사: GovernanceQualityConcern]
+         * LV3 거버넌스 시스템, 품질 게이트(Feedback/Gate/Maturity), 모델링 규약과 정책,
+         * 그리고 워킹그룹 제출 스키마 및 제출 현황 노출
+         */
+        satisfy 'governance and quality viewpoint';
+        expose GovernanceSystemAndTooling::GovernanceSystem::*;
+        expose QualityGatesAndReviewProcess::*;
+        expose ModelingConventionsAndPolicies::ModelingConventions::*;
+        expose ModelingConventionsAndPolicies::PolicyAndDirectives::*;
+        expose ChapterSprint::AssignmentSubmission;
+        expose WG_Submissions_Tracker::*;
     }
 
     // =========================================================================
@@ -3106,33 +3421,35 @@ package ChapterViews {
         }
         view col_what :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "coreValueWhat";
+                attributeName = "coreValueWhat";
             }
             attribute :>> columnWidth = 350;
         }
         view col_why :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "rationale";
+                attributeName = "rationale";
             }
             attribute :>> columnWidth = 300;
         }
         view col_validation :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "validationCriterion";
+                attributeName = "validationCriterion";
             }
             attribute :>> columnWidth = 300;
         }
     }
 
-    // (2) 챕터 5대 핵심 성과 지표(Core MoEs) 현황 모니터링 테이블 뷰
+    // (2) 챕터 핵심 성과 지표(Core MoEs) 현황 모니터링 테이블 뷰
     view ChapterCoreMoEsTableView : TableView {
         doc
-        /* LifecycleEvolutionConcern 대응: 챕터의 5대 핵심 성과 지표(Core MoEs) 현황 테이블 뷰.
-         * [개선 포인트]
+        /* LifecycleEvolutionConcern 대응: 챕터의 핵심 성과 지표(Core MoEs) 현황 테이블 뷰.
          * 1) exposeFeaturesAndHeritage = true 설정을 통해 상위 ChapterMoEsHolder로부터 상속받은
-         *    5대 MoE 속성이 테이블 셀에 정상 렌더링되도록 보장함.
+         *    MoE 속성이 테이블 셀에 렌더링되도록 한다.
          * 2) expose 경로에서 incoseKoreaChapterContext 내의 chapter 파트를 노출하고,
-         *    ColumnType::attributeValue 내부의 attributeName을 지정함.
+         *    ColumnType::attributeValue 내부의 attributeName을 지정한다.
+         * TODO(확인 필요): 참조모델 수(completedReferenceModelsCount)와 AI Skills 수(developedAISkillsCount)는
+         *   repository 크기에서 파생되므로 UI에서 직접 편집할 수 없다. 수동 입력이 필요하면 KoreaChapter에서
+         *   '수동 입력 + 일치 여부 assert' 방식으로 되돌린다.
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
@@ -3144,41 +3461,43 @@ package ChapterViews {
         }
         view col_presentations :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "accumulatedPresentationsCount";
+                attributeName = "accumulatedPresentationsCount";
             }
             attribute :>> columnWidth = 160;
         }
         view col_refModels :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "completedReferenceModelsCount";
+                attributeName = "completedReferenceModelsCount";
             }
             attribute :>> columnWidth = 160;
         }
         view col_aiSkills :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "developedAISkillsCount";
+                attributeName = "developedAISkillsCount";
             }
             attribute :>> columnWidth = 160;
         }
         view col_activeMembers :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "regularActiveMembersCount";
+                attributeName = "regularActiveMembersCount";
             }
             attribute :>> columnWidth = 160;
         }
         view col_sepMembers :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "sepCertifiedMembersCount";
+                attributeName = "sepCertifiedMembersCount";
             }
             attribute :>> columnWidth = 160;
         }
     }
 
-    // (3) KnowledgeAssetConcern 대응: 워킹그룹별 과제 제출물 및 게이트 통과 현황 테이블 뷰
+    // (3) KnowledgeAssetConcern 대응: 워킹그룹별 과제 제출물 및 제출 상태 테이블 뷰
     view AssignmentSubmissionStatusTableView : TableView {
         doc
         /* WG_Submissions_Tracker 패키지만 단독으로 expose하여
-         * 1. Aerospace, 2. Automotive, 3. IT, 4. Semiconductor 4개 행만 정확히 테이블에 표시함.
+         * 워킹그룹별 제출 usage를 행으로 표시한다. 새 WG 제출 usage를 추가하면 행이 자동으로 늘어난다.
+         * TODO(확인 필요): workingGroup 은 attribute가 아닌 ref 이므로 namedFeatureValue 열로 표시했다.
+         *   값이 보이지 않으면 WorkingGroup.wgName 을 표시하는 파생 attribute 추가를 검토한다.
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
@@ -3188,17 +3507,58 @@ package ChapterViews {
             attribute :>> featureToRender = ColumnType::declaredName;
             attribute :>> columnWidth = 220;
         }
-        view col_wgName :>> columnViews {
-            attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "workingGroupName";
+        view col_workingGroup :>> columnViews {
+            attribute :>> featureToRender = ColumnType::namedFeatureValue {
+                featureName = "workingGroup";
             }
             attribute :>> columnWidth = 240;
         }
         view col_status :>> columnViews {
             attribute :>> featureToRender = ColumnType::attributeValue {
-                attribute attributeName = "status";
+                attributeName = "status";
             }
             attribute :>> columnWidth = 150;
+        }
+    }
+
+    // (4) GovernanceQualityConcern 대응: 제출물별 게이트 현황 테이블 뷰
+    view AssignmentGateStatusTableView : TableView {
+        doc
+        /* 워킹그룹 제출물의 통합 게이트 판정 결과(isGatePassed)와 제출 상태(status)를 함께 보여 준다.
+         * 상태와 게이트 결과의 모순은 AssignmentSubmission.statusGateConsistency 가 검사한다.
+         *
+         * TODO(확인 필요): checklist 는 중첩 속성(AssignmentGateChecklist)이라 Syside TableView에서
+         *   개별 항목(예: checklist.isIndependentWholeSystem)을 열로 표시할 수 있는지 확인되지 않았다.
+         *   표시할 수 없으면 대안:
+         *   1) AssignmentSubmission에 필요한 항목만 파생 attribute로 노출(예: isGatePassed 처럼 한 줄 파생),
+         *   2) AssignmentGateChecklist 인스턴스를 별도 행(expose)으로 두고 열을 속성 이름으로 구성,
+         *   3) MatrixView로 제출물(행) x Gate constraint(열) 매트릭스를 구성.
+         */
+        satisfy 'governance and quality viewpoint';
+        attribute :>> exposeFeaturesAndHeritage = true;
+        expose WG_Submissions_Tracker::*;
+
+        view col_submissionId :>> columnViews {
+            attribute :>> featureToRender = ColumnType::declaredName;
+            attribute :>> columnWidth = 220;
+        }
+        view col_status :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "status";
+            }
+            attribute :>> columnWidth = 150;
+        }
+        view col_isGatePassed :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "isGatePassed";
+            }
+            attribute :>> columnWidth = 150;
+        }
+        view col_checklist :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "checklist";
+            }
+            attribute :>> columnWidth = 300;
         }
     }
 } // package ChapterViews
@@ -3581,28 +3941,29 @@ package LV1_BlackBox_ConOps_Scaffold {
             :>> lifecycleEvolutionTrait = "<배포 후 수명주기 동안의 진화/유지보수 가정>";
         }
 
-        // 도메인 임무 요구사항 인스턴스 (SoI와 ConOps 시나리오가 공통으로 satisfy하는 대상)
-        requirement domainMission : DomainMissionObjective;
-
-        // [Step C] 블랙박스 SoI 및 3대 외부 액터(각 2개 이상) 정의
+        // [Step C] 블랙박스 SoI 및 블랙박스 ConOps 시나리오 정의
         part def DomainBlackBoxSoI :> BaseBlackBoxSoI {
             :>> soiName =
                 "<하위 부품이 아닌 독립 임무 완결형 최상위 대상시스템(Whole-System) 명칭>";
-            satisfy domainMission;
         }
 
+        action def DomainConOpsScenario :> BaseBlackBoxConOpsScenario {
+            // step1 ~ step5의 5-Tuple 속성을 도메인 상호작용에 맞게 재정의(:>>)
+        }
+
+        // [Step D] 도메인 운용 컨텍스트 통합 및 임무 만족(satisfy) 연결
         part def DomainOperationalContext :> BaseBlackBoxOperationalContext {
+            requirement domainMission : DomainMissionObjective;
+
             :>> targetSoI : DomainBlackBoxSoI;
+            perform action conOpsScenario : DomainConOpsScenario;
+
             // externalOrganizations, externalPhysicalSystems, externalNaturalEnvironments를
             // 각 2개 이상 구체화하고 connect 문으로 targetSoI의 경계 포트와 연결
-        }
 
-        // [Step D] 블랙박스 ConOps 시나리오 정의 및 임무 만족(satisfy) 연결
-        action def DomainConOpsScenario :> BaseBlackBoxConOpsScenario {
-            // [교수님 피드백 1: Feedback1_MissionAchievementConOpsRule] 시나리오 수행 결과가 임무 요구사항을 만족
-            satisfy domainMission;
-
-            // step1 ~ step5의 5-Tuple 속성을 도메인 상호작용에 맞게 재정의(:>>)
+            // [교수님 피드백 1] 대상시스템(SoI) 및 운용시나리오(ConOps)가 도메인 임무 목표를 만족함
+            satisfy domainMission by targetSoI;
+            satisfy domainMission by conOpsScenario;
         }
     } // package DomainWG_Template_Skeleton
 } // package LV1_BlackBox_ConOps_Scaffold
@@ -3655,7 +4016,7 @@ package LV1_Logical_WhiteBox_Scaffold {
          * 기능-서브시스템 할당을 구체화함.
          */
         part logicalSubsystems : BaseLogicalSubsystem [1..*];
-        action logicalFunctions : BaseLogicalFunctionAction [1..*];
+        perform action logicalFunctions : BaseLogicalFunctionAction [1..*];
 
         // 논리 기능 -> 논리 서브시스템 할당 (도메인에서 개별 기능/서브시스템 쌍으로 세분화)
         allocate logicalFunctions to logicalSubsystems;
@@ -3708,7 +4069,7 @@ package LV1_Physical_and_VnV_Scaffold {
         subject systemUnderTest : BasePhysicalSoI;
 
         // 검증 대상 MOE 및 판정 제약 (방향성은 MOEMetric.direction에 따라 결정됨)
-        ref attribute moeUnderTest : MOEMetric;
+        in attribute moeUnderTest : MOEMetric;
         constraint moeCheck : MOEAchievementConstraint {
             in :>> moe = moeUnderTest;
         }

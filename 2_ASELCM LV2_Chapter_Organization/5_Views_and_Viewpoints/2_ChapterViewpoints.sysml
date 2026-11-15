@@ -2,7 +2,7 @@ package ChapterViewpoints {
     private import StakeholdersConcerns::*;
 
     viewpoint 'administrative operations viewpoint' {
-        // 행정/운영 관점이 다루는 3대 관심사(운영 흐름 + 지식자산/참조모델 관리 + 수명주기/MoE 진화)를 모두 frame
+        // 행정/운영 관점이 다루는 관심사(운영 흐름 + 지식자산/참조모델 관리 + 수명주기/MoE 진화)를 모두 frame
         frame concern operationalFlow : OperationalFlowConcern;
         frame concern knowledgeAsset : KnowledgeAssetConcern;
         frame concern lifecycleEvolution : LifecycleEvolutionConcern;
@@ -12,13 +12,13 @@ package ChapterViewpoints {
             /* 1. Chapter의 효과적이고 지속적인 운영을 위한 행정적인 관점
              * - 운영 흐름 및 과제 스프린트 프로세스 (OperationalFlowConcern)
              * - 지식 저장소(KnowledgeRepository) 및 LV1 참조모델 형상 관리 (KnowledgeAssetConcern)
-             * - 향후 챕터 성장 단계(Phase 1->2->3) 및 5대 핵심 MoE 전환 규칙 (LifecycleEvolutionConcern)
+             * - 향후 챕터 성장 단계(Phase 1->2->3) 및 핵심 MoE 전환 규칙 (LifecycleEvolutionConcern)
              */
         }
     }
 
     viewpoint 'member value viewpoint' {
-        // 회원 가치 관점이 다루는 3대 관심사(회원 식별 + 핵심 가치/근거/검증 + 기업 보안 규칙)를 모두 frame
+        // 회원 가치 관점이 다루는 관심사(회원 식별 + 핵심 가치/근거/검증 + 기업 보안 규칙)를 모두 frame
         frame concern stakeholderId : StakeholderIdentificationConcern;
         frame concern valueRationale : ValueRationaleValidationConcern;
         frame concern riskSecurity : RiskSecurityConcern;
@@ -54,6 +54,18 @@ package ChapterViewpoints {
             /* 4. 기존 시스템 엔지니어링 모임(KCOSE, KOSSE 등)과의 연계 관점
              * - 국내 타 학회와의 상호 보완적 역할, 챕터 대 챕터 차원의 정보 교환,
              * - 조직 레벨에서의 벤치마킹 및 차별화된 시스템 엔지니어링 생태계 고유 역량 제공 (CapabilityValueConcern)
+             */
+        }
+    }
+
+    viewpoint 'governance and quality viewpoint' {
+        frame concern governanceQuality : GovernanceQualityConcern;
+
+        require constraint {
+            doc
+            /* 5. LV3 거버넌스와 품질 보증 관점
+             * - 모델링 규약, 학술자문단 피드백 및 가이드 Gate 충족 여부와 승인 상태 추적 (GovernanceQualityConcern)
+             * - 워킹그룹 제출물의 게이트 판정 결과와 제출 상태(status)의 일관성 확인
              */
         }
     }

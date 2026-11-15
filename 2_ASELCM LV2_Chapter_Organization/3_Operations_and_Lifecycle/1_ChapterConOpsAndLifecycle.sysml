@@ -1,13 +1,16 @@
 package ChapterConOpsAndLifecycle {
     doc
     /* Chapter Behavior — 통합된 시스템 경계 및 인터페이스 모델을 바탕으로
-     * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의
+     * 챕터의 운용 시나리오(ConOps) 및 성장 상태머신(Lifecycle)을 정의.
+     * 행위와 구조(chapter)의 연결(perform/exhibit)은 0_ASELCM_Integration 통합 패키지에서 수행한다.
      */
 
     private import ScalarValues::*;
+    private import StakeholderDefinitions::*;
     private import ChapterSystemContext::*;
     private import ExternalActorsAndInterfaces::*;
     private import ChapterMetricsAndGuards::*;
+    private import QualityGatesAndReviewProcess::*;
 
     // ==========================================
     // 1. ConOps (운용 시나리오 및 프로세스)
@@ -16,19 +19,11 @@ package ChapterConOpsAndLifecycle {
         doc
         /* 온라인 지식교환 방식, Do-Tank 참조모델 개발 프로세스 및 상위 시스템 보고 프로세스의 동적 행위 */
 
-        enum def ExchangeModeKind {
-            seminarStyle; // 세미나/특강형
-            caseStudyStyle; // 케이스 스터디형
-            handsOnLabStyle; // 프로젝트 실습형
-            onlineReviewStyle; // 온라인 진행상황 공유 및 산출물 검토형
-            literatureReadingStyle; // 문헌 리딩형
-        }
-
         action def KnowledgeExchangeSession {
             doc
             /* 내부 비동기/실시간 지식 교환 프로세스 (Internal Flow) */
 
-            in attribute mode : ExchangeModeKind;
+            in attribute mode : OnlineExchangeKind;
             in item referenceResource : HandbookResourceItem [0..1]; // TechOps 등 외부 문헌 리소스 활용
 
             out item producedArtifact : ChapterArtifact; // 논의 후 생성된 지식 자산
@@ -46,17 +41,19 @@ package ChapterConOpsAndLifecycle {
             then archiveToKnowledgeStore;
         }
 
-        // [신규] Do-Tank 핵심 운영 프로세스: SE 과제 수행 및 LV1 참조모델 개발·검증 워크플로우
+        // Do-Tank 핵심 운영 프로세스: SE 과제 수행 및 LV1 참조모델 개발·검증 워크플로우
         action def ReferenceModelDevelopmentProcess {
             doc
             /* [LV2 Do-Tank 참조모델 개발 및 품질 게이트 프로세스]
              * 1) 과제 가이드(PDF) 및 LV1 공통 스캐폴드(LV1_BlackBox_ConOps_Scaffold) 배포
              * 2) 워킹그룹별 도메인 모델링 수행 (블랙박스 SoI, 임무/MOE, 시점 인프라 가정, 5-Tuple 시나리오)
-             * 3) 학술자문단(교수진) 피드백 3대 원칙 및 가이드 6대 자체 감사 게이트(Gate 1~6) 심사
-             * 4) 기업 보안 규정(사내 데이터 배제 및 가상값 치환) 준수 확인
-             * 5) KnowledgeRepository 및 GitHub 메인 브랜치 Baseline 정식 등록
+             * 3) LV3 ModelReviewProcess 수행: 자동 게이트 점검, WG Lead 검토, 학술자문단 심사,
+             *    기업 보안 규정(사내 데이터 배제 및 가상값 치환) 확인, 병합/배포.
+             *    게이트 미통과 시 재작업 루프는 ModelReviewProcess 가 관리한다(여기서 다시 정의하지 않는다).
+             * 4) 검증 통과 모델을 KnowledgeRepository::approvedReferenceModels 에 Baseline으로 정식 등록
              */
             in item assignmentGuide : ChapterArtifact;
+            in attribute gateChecklist : AssignmentGateChecklist;
             out item approvedBaselineModel : ReferenceModelArtifact;
 
             action issueAssignmentAndScaffold {
@@ -67,15 +64,9 @@ package ChapterConOpsAndLifecycle {
                 doc
                 /* 워킹그룹이 스캐폴드를 상속(:>)하여 도메인 모델 작성 */
             }
-            action reviewByAdvisorsAndVerifyGates {
-                doc
-                /* 교수님 피드백 1(존재목적 달성 표현), 피드백 2(MOE 목표값/한계값/단위),
-                 * 피드백 3(운용시점 인프라 가정 및 블랙박스 상호작용) 및 Gate 1~6 충족 여부 검증
-                 */
-            }
-            action verifySecurityAndAnonymization {
-                doc
-                /* 회사명/프로젝트명 비언급 및 민감 수치 가상값 치환 여부 점검 */
+            // LV3 검토 프로세스를 하위 action으로 재사용
+            action modelReview : ModelReviewProcess {
+                in :>> submittedChecklist = gateChecklist;
             }
             action baselineToKnowledgeRepository {
                 doc
@@ -84,8 +75,7 @@ package ChapterConOpsAndLifecycle {
 
             first issueAssignmentAndScaffold;
             then developDomainModelInWG;
-            then reviewByAdvisorsAndVerifyGates;
-            then verifySecurityAndAnonymization;
+            then modelReview;
             then baselineToKnowledgeRepository;
         }
 
@@ -112,7 +102,8 @@ package ChapterConOpsAndLifecycle {
     package Lifecycle {
         doc
         /* 챕터 성장 단계별 상태머신.
-         * LV3 거버넌스의 PhaseTransitionGateCondition(승인된 참조모델 3건 이상, 발표자료 10건 이상)과 연동됨.
+         * Phase 전환 조건은 LV3 QualityGatesAndReviewProcess 의 Phase1ToPhase2GateConstraint /
+         * Phase2ToPhase3GateConstraint 가 단일 정의하며, 이 상태머신은 metrics 의 판정 결과만 참조한다.
          */
 
         state def ChapterLifecycle {
@@ -123,37 +114,43 @@ package ChapterConOpsAndLifecycle {
 
             state onlineStudyPhase {
                 doc
-                /* Phase 1: 온라인 스터디 및 도메인별 LV1 참조모델 초기 개발 단계 (현재)
-                 * - 활성 Context 3종만 연결된 상태
-                 * - 워킹그룹별 블랙박스 정의 및 ConOps 모델링 과제 수행 중
+                /* Phase 1: 온라인 스터디 및 도메인별 LV1 참조모델 초기 개발 단계
+                 * - Phase 1 활성 Context(incoseKoreaChapterContext)만 연결된 상태
+                 * - 워킹그룹별 블랙박스 정의 및 ConOps 모델링 과제 수행
                  */
             }
 
             state sponsorshipAndOfflineSeminarPhase {
                 doc
                 /* Phase 2: 기업 스폰서 확보 및 오프라인 세미나 정례화 단계
-                 * - 교육/실무 참고용 LV1 참조모델 3건 이상 확보 및 발표자료 10건 이상 누적 시 진입
+                 * - 진입 조건: Phase1ToPhase2GateConstraint 참조
+                 *   (판정식은 기업 스폰서 조건을 포함하지 않는다. 스폰서 연동 후 별도 조건 추가 여부는 TODO)
                  * - Sponsor, PeerSociety(KOSSE/KCOSE) 연결 활성화
+                 * TODO(확인 필요): 단계 이름은 '기업 스폰서 확보'이나 진입 판정식에는 스폰서 조건이 없다.
                  */
             }
 
             state officialWorkingGroupPhase {
                 doc
-                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 및 자체 아키텍트 인증 프로그램 운영 단계 */
+                /* Phase 3: INCOSE 본부 공식 워킹그룹(WG) 발족 및 자체 아키텍트 인증 프로그램 운영 단계.
+                 * 진입 조건: Phase2ToPhase3GateConstraint 참조
+                 */
             }
 
+            // 전이 트리거: 파생 Boolean 값의 변화를 change trigger(accept when)로 명시
+            // TODO(확인 필요): 'accept when' 구문은 Syside check 를 통과했으나, 변화 감지 실행 의미는 확인하지 못했다.
             transition phase1To2
                 first onlineStudyPhase
-                if metrics.isPhase1To2Ready
+                accept when metrics.isPhase1To2Ready
                 then sponsorshipAndOfflineSeminarPhase {
-                doc /* Phase 2 전환 조건 (Phase1ToPhase2GateConstraint 반영) */
+                doc /* Phase 2 전환 조건: Phase1ToPhase2GateConstraint 참조 */
             }
 
             transition phase2To3
                 first sponsorshipAndOfflineSeminarPhase
-                if metrics.isPhase2To3Ready
+                accept when metrics.isPhase2To3Ready
                 then officialWorkingGroupPhase {
-                doc /* Phase 3 전환 조건 (Phase2ToPhase3GateConstraint 반영) */
+                doc /* Phase 3 전환 조건: Phase2ToPhase3GateConstraint 참조 */
             }
         }
     } // package Lifecycle

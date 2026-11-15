@@ -2,6 +2,7 @@ package ExternalActorsAndInterfaces {
     doc
     /* 외부 환경(Context)의 액터 정의 및 교환 인터페이스 */
     private import ScalarValues::*;
+    private import StakeholderDefinitions::*;
 
     // ---- 2.1 교환 아이템 (External Items) ----
     item def ToolLicenseInfoItem {
@@ -53,7 +54,7 @@ package ExternalActorsAndInterfaces {
     // ---- 2.3 경계 외부 액터 (Context Actors) ----
     part def ContextToolVendor {
         doc
-        /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). 기존 ToolVendor 속성 통합. */
+        /* Cameo 등 MBSE 툴 벤더 (외부 의존성 액터). */
         attribute toolName : String;
         attribute licenseRequired : Boolean;
         port vendorInterface : ~ChapterToolInterfacePort;
@@ -67,19 +68,20 @@ package ExternalActorsAndInterfaces {
 
     part def ContextTechnicalOperations {
         doc
-        /* 50개 이상의 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
+        /* INCOSE Technical Operations: 다수 WG 총괄 및 SE Handbook 배포. 문헌 리딩형 활동의 원천. */
         port techOpsInterfaceOut : ~ChapterTechOpsInterfacePort;
     }
 
     part def ContextChapterAffiliationSponsor {
         doc
-        /* 계약 기반 후원 조직(CAS). Phase 1에서는 미고려(조건부). */
+        /* 계약 기반 후원 조직(CAS). Phase 1 판정 조건에서는 제외(조건부). */
         port sponsorInterfaceOut : ~ChapterSponsorInterfacePort;
     }
 
     part def ContextPeerSocietyOrganization {
         doc
-        /* KOSSE/KCOSE 등 조직 대 조직 인터페이스. Phase 1 비활성. */
+        /* KOSSE/KCOSE 등 국내 타 학회와의 조직 대 조직 인터페이스. Phase 1 비활성. */
+        attribute peerSocietyKind : PeerSocietyKind;
         port peerOrgInterfaceOut : ~ChapterPeerInterfacePort;
     }
 } // package ExternalActorsAndInterfaces

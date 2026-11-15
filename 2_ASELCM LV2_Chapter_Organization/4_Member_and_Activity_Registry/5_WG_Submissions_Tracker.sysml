@@ -1,12 +1,14 @@
 package WG_Submissions_Tracker {
     doc
-    /* [6. Projects/1. Domains 하위 4대 도메인 폴더 매핑]
-     * 1. Aerospace, 2. Automotive, 3. IT, 4. Semiconductor 워킹그룹별 과제 제출물 및 Gate 통과 현황 트래킹
+    /* [6. Projects/1. Domains 하위 도메인 폴더 매핑]
+     * 워킹그룹별 과제 제출물 및 Gate 통과 현황 트래킹.
+     * 새 워킹그룹의 제출은 'item <이름> : AssignmentSubmission' usage 1개만 추가한다.
+     * 도메인, SoI, 저장 폴더, 소유자, 제출자 기본값은 workingGroup(WorkingGroup)에서 파생되므로 여기서 다시 적지 않는다.
      */
     private import ScalarValues::*;
     private import ChapterMembersDirectory::*;
-    private import ChapterSystemContext::*;
     private import ChapterSprint::*;
+    private import WorkingGroupsAndRoles::*;
     private import ModelingAssignments_and_Feedbacks::*;
 
     // =========================================================================
@@ -14,25 +16,14 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item aerospaceWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "1. Aerospace Working Group (Space & Drone)";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'이수', ChapterMembersDirectory::'박승훈',
-            ChapterMembersDirectory::'김다운', ChapterMembersDirectory::'박홍석',
-        );
+        ref :>> workingGroup = chapterOrganization.aerospaceWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title =
                 "Multi-Purpose Quadcopter Drone System (Surveillance, Strike, Logistics) Reference Model";
-            :>> owner = "Aerospace WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/1. Aerospace";
-            :>> locationURL = "6. Projects/1. Domains/1. Aerospace/";
-            :>> domainName = "1. Aerospace (Defense & Space/UAV)";
-            :>> targetSoIName = "2035 다목적 쿼드콥터 드론 시스템 (감시정찰/공격/보급 임무 시스템)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -41,23 +32,16 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item automotiveWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "2. Automotive SDV Working Group";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'추수호', ChapterMembersDirectory::'최성열',
-        );
+        ref :>> workingGroup = chapterOrganization.automotiveWG;
         :>> status = SubmissionStatusKind::inProgress;
+        // TODO(확인 필요): Automotive WG 참여자('추수호', '최성열', '이의범')와 제출자 목록이 달라 재정의로 남겼다.
+        //   '이의범'이 제출에 참여한다면 이 재정의를 삭제하고(기본값 = WG 참여자), 아니면 WG 참여자 목록을 정정한다.
+        ref :>> submitters = ('추수호', '최성열',);
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "2035 Software-Defined Vehicle (SDV) Whole-System Reference Model";
-            :>> owner = "Automotive SDV WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/2. Automotive";
-            :>> locationURL = "6. Projects/1. Domains/2. Automotive/";
-            :>> domainName = "2. Automotive (SDV & Smart Mobility)";
-            :>> targetSoIName = "2035 소프트웨어 중심 자동차 (SDV Whole-System Vehicle)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -66,24 +50,13 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item itRoboticsWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "3. IT & Robotics System Working Group";
-        ref :>> submitters = (
-            ChapterMembersDirectory::'구정모', ChapterMembersDirectory::'최지원',
-            ChapterMembersDirectory::'박홍석', ChapterMembersDirectory::'심정환',
-        );
+        ref :>> workingGroup = chapterOrganization.itSwWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "Disaster Search and Rescue Support Robot System Reference Model";
-            :>> owner = "IT & Robotics WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/3. IT";
-            :>> locationURL = "6. Projects/1. Domains/3. IT/";
-            :>> domainName = "3. IT (Robotics & Smart Disaster Response System)";
-            :>> targetSoIName = "2035 재난 탐색 및 구조 지원 로봇 시스템";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 
@@ -92,21 +65,13 @@ package WG_Submissions_Tracker {
     // =========================================================================
     item semiconductorWG_Sub_Assignment2 : AssignmentSubmission {
         ref :>> targetAssignment = assignment1_2_BlackBoxAndConOps;
-        :>> workingGroupName = "4. Semiconductor System Working Group";
-        ref :>> submitters = ChapterMembersDirectory::'김희재';
+        ref :>> workingGroup = chapterOrganization.semiconductorWG;
         :>> status = SubmissionStatusKind::inProgress;
 
-        part :>> submittedModel : ReferenceModelArtifact {
+        item :>> submittedModel {
             :>> title = "EUV Zenith Semiconductor Equipment Fab-Context Reference Model";
-            :>> owner = "Semiconductor WG";
-            :>> repoFolderPath = "6. Projects/1. Domains/4. Semiconductor";
-            :>> locationURL = "6. Projects/1. Domains/4. Semiconductor/";
-            :>> domainName = "4. Semiconductor (EUV Lithography & Sub-Fab System)";
-            :>> targetSoIName = "2035 EUV 제니스 반도체 장비 시스템 (Level 0 Fab Context)";
             :>> modelVersion = "v0.2-DoDAF-ConOps";
-            :>> inheritsCommonScaffold = true;
             :>> isSecurityCleared = true;
-            :>> isGateApproved = false;
         }
     }
 } // package WG_Submissions_Tracker

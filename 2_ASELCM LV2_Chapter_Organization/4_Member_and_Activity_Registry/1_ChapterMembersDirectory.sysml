@@ -1,13 +1,21 @@
 package ChapterMembersDirectory {
     private import StakeholderDefinitions::*;
 
+    doc
+    /* 챕터 회원 디렉터리.
+     * 새 회원은 'part <M0NN> '이름' : IncoseKoreaChapterMember :> chapterMemberRoster' usage 1개만 추가하면
+     * KoreaChapter.member(바인딩: chapterMemberRoster)에 자동으로 포함된다.
+     * 식별자는 short name(<M001>)으로 부여하며 별도 attribute를 만들지 않는다.
+     * TODO(개인정보): 이메일/전화번호는 모델에서 제거했다. 필요하면 저장소 밖의 비공개 별도 파일에서 관리한다.
+     */
+
+    // 회원 전체 집합: 모든 회원 usage는 이 컬렉션을 subset 한다.
+    part chapterMemberRoster : IncoseKoreaChapterMember [0..*];
+
     // ---- 개별 회원 모델링 (Part Usages) ----
-    part '이수' : IncoseKoreaChapterMember {
-        :>> name = "이수";
-        :>> email = "isugkgkgk@gmail.com";
+    part <M001> '이수' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "인터그래비티(주)";
         :>> position = "비행SW팀 연구원";
-        :>> phoneNumber = "010-2650-9183";
         :>> region = RegionKind::daejeonSejongChungcheong;
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -49,12 +57,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "다른 INCOSE 챕터와의 국제적 협력";
     }
 
-    part '박승훈' : IncoseKoreaChapterMember {
-        :>> name = "박승훈";
-        :>> email = "abhyung123@gmail.com";
+    part <M002> '박승훈' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "영풍전자";
         :>> position = "무인항전체계개발팀 책임연구원";
-        :>> phoneNumber = "010-4007-8059";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -93,12 +98,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "incose와 연계한 글로벌 현업트랜드 제공";
     }
 
-    part '이중윤' : IncoseKoreaChapterMember {
-        :>> name = "이중윤";
-        :>> email = "leejy@ajou.ac.kr, lee.joongyoon@gmail.com";
+    part <M003> '이중윤' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "아주대학교";
         :>> position = "시스템공학과 교수";
-        :>> phoneNumber = "010-8951-5222";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = (
             DomainKind::defenseAndAerospace, DomainKind::automotiveAndMobility,
@@ -150,12 +152,9 @@ package ChapterMembersDirectory {
             "챕터 구성원이 학회 및 협회 활동에 참가 (학술대회 발표 및 임원진으로 참여 등)";
     }
 
-    part '서은석' : IncoseKoreaChapterMember {
-        :>> name = "서은석";
-        :>> email = "essuh@snu.ac.kr";
+    part <M004> '서은석' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "서울대학교";
         :>> position = "교수";
-        :>> phoneNumber = "010-2688-7175";
         :>> region = RegionKind::seoul;
         :>> domain = (DomainKind::automotiveAndMobility, DomainKind::academiaAndResearch,);
         :>> preferredActivity = (
@@ -181,12 +180,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "추후 논의";
     }
 
-    part '추수호' : IncoseKoreaChapterMember {
-        :>> name = "추수호";
-        :>> email = "chooshow@gmail.com";
+    part <M005> '추수호' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 엔지니어";
-        :>> phoneNumber = "010-8379-0578";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::automotiveAndMobility;
         :>> preferredActivity = (
@@ -223,12 +219,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "자동차/IoT 등 다양한 분야의 전문가 참여, Incose와 직접 교류";
     }
 
-    part '구정모' : IncoseKoreaChapterMember {
-        :>> name = "구정모";
-        :>> email = "jeongmokoo@gmail.com";
+    part <M006> '구정모' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "볼보그룹코리아(주)";
         :>> position = "Group Technology&Operations Principal Solution Architect";
-        :>> phoneNumber = "010-6304-3930";
         :>> region = (
             RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::busanUlsanGyeongnam,
         );
@@ -262,12 +255,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "표준 가이드 기준으로 실무 적용 가능 레퍼런스 제공";
     }
 
-    part '김희재' : IncoseKoreaChapterMember {
-        :>> name = "김희재";
-        :>> email = "tim0huj@gmail.com";
+    part <M007> '김희재' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "에드워드코리아";
         :>> position = "시스템개발부 (NPI-IS Sr. Systems Engineer)";
-        :>> phoneNumber = "010-9863-7900";
         :>> region = (
             RegionKind::seoul, RegionKind::gyeonggiIncheon, RegionKind::daejeonSejongChungcheong,
         );
@@ -304,12 +294,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "타 학회 경험 없음";
     }
 
-    part '김다운' : IncoseKoreaChapterMember {
-        :>> name = "김다운";
-        :>> email = "dawun.kim93@gmail.com";
+    part <M008> '김다운' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "한국항공우주산업";
         :>> position = "디지털엔지니어링팀 선임연구원";
-        :>> phoneNumber = "010-4745-6797";
         :>> region = RegionKind::busanUlsanGyeongnam;
         :>> domain = DomainKind::defenseAndAerospace;
         :>> preferredActivity = (
@@ -350,12 +337,9 @@ package ChapterMembersDirectory {
         :>> uniqueCapability = "MBSE 측면을 강화해 국내 도입 시 도움을 주면 좋겠습니다.";
     }
 
-    part '박홍석' : IncoseKoreaChapterMember {
-        :>> name = "박홍석";
-        :>> email = "hongseok@selab.ai";
+    part <M009> '박홍석' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "시스템엔지니어링(주)";
         :>> position = "연구개발팀 연구원";
-        :>> phoneNumber = "010-8944-3072";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::academiaAndResearch;
         :>> preferredActivity = (
@@ -385,12 +369,9 @@ package ChapterMembersDirectory {
     }
 
     // ---- 설문 2 응답 없는 회원 (설문 1 정보만 유지) ----
-    part '심정환' : IncoseKoreaChapterMember {
-        :>> name = "심정환";
-        :>> email = "jshim@lotustech.co.kr, jshim10@gmail.com";
+    part <M010> '심정환' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "로터스정보기술";
         :>> position = "대표이사";
-        :>> phoneNumber = "010-3270-3997";
         :>> region = (RegionKind::seoul, RegionKind::gyeonggiIncheon,);
         :>> domain = DomainKind::itAndSoftware;
         :>> preferredActivity = (
@@ -401,20 +382,14 @@ package ChapterMembersDirectory {
         :>> expectation = "INCOSE 공인 국제 인증자격 관련 소모임 또는 스터디그룹";
     }
 
-    part '최성열' : IncoseKoreaChapterMember {
-        :>> name = "최성열";
-        :>> email = "bm0611@gmail.com";
+    part <M011> '최성열' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 엔지니어";
-        :>> phoneNumber = "010-6302-3888";
     }
 
-    part '최지원' : IncoseKoreaChapterMember {
-        :>> name = "최지원";
-        :>> email = "ein1013@selab.ai";
+    part <M012> '최지원' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "아주대학교";
         :>> position = "공학연구소 연구원";
-        :>> phoneNumber = "010-8217-0205";
         :>> region = RegionKind::seoul;
         :>> domain = (DomainKind::itAndSoftware, DomainKind::academiaAndResearch,);
         :>> preferredActivity = (
@@ -425,11 +400,8 @@ package ChapterMembersDirectory {
         :>> expectation = "국내 학회 참여 경험이 없어 잘 모릅니다. 많이 배우고 싶습니다.";
     }
 
-    part '이의범' : IncoseKoreaChapterMember {
-        :>> name = "이의범";
-        :>> email = "tigerleb@gmail.com";
+    part <M013> '이의범' : IncoseKoreaChapterMember :> chapterMemberRoster {
         :>> affiliation = "현대모비스";
         :>> position = "책임연구원 / 시스템 평가 엔지니어";
-        :>> phoneNumber = "010-5125-2884";
     }
 } // package ChapterMembersDirectory

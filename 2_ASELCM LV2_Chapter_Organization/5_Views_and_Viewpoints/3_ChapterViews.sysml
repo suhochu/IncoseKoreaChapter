@@ -1,17 +1,22 @@
 package ChapterViews {
-    private import ChapterViewpoints::*; // [개선] 중복 import 제거
+    private import ChapterViewpoints::*;
     private import SysideViews::*;
     private import SysideViews::TableViewDefinitions::*;
     private import SysideViews::MatrixViewDefinitions::*;
 
+    // TODO(확인 필요): 아래 TableView 열 정의는 'ColumnType::attributeValue { attributeName = "..."; }' 형태를 쓴다.
+    //   ':>> attributeName = "..."' 로 바꾸면 Syside 0.10.x 에서 reference-error('No Feature named attributeName')가 발생하므로
+    //   현재 표기를 유지한다. 다만 'syside table export' 결과의 셀 값이 비어 있는 것은 변경 전 모델에서도 동일했다
+    //   (표기 문제인지 export 기능 한계인지 UI에서 확인 필요).
+
     // =========================================================================
-    // 1. 4대 기본 아키텍처 뷰 (8대 Concern 대상 모델 요소 전체 노출)
+    // 1. 기본 아키텍처 뷰 (Concern 대상 모델 요소 노출)
     // =========================================================================
     view AdministrativeOperationsView {
         doc
         /* [매핑 관심사: OperationalFlowConcern, KnowledgeAssetConcern, LifecycleEvolutionConcern]
          * 행정/운영 흐름(ConOps), 지식저장소(KnowledgeRepository), 스프린트 과제,
-         * 워킹그룹 조직 및 수명주기(Lifecycle & 5대 MoE 게이트) 노출
+         * 워킹그룹 조직 및 수명주기(Lifecycle & MoE 게이트) 노출
          */
         satisfy 'administrative operations viewpoint';
         expose ChapterSystemContext::KnowledgeRepository;
@@ -31,10 +36,13 @@ package ChapterViews {
     view MemberValueView {
         doc
         /* [매핑 관심사: StakeholderIdentificationConcern, ValueRationaleValidationConcern, RiskSecurityConcern]
-         * 회원 속성(도메인, 관심사, 제공 자원), 회원별 가치 요구사항(Needs) 및 기업 보안 규칙(SecurityRules) 노출
+         * 회원 속성 정의, 회원 집합, 회원별 가치 요구사항(Needs) 및 기업 보안 규칙(SecurityRules) 노출.
+         * 회원 디렉터리 패키지 전체(::*)는 개인별 usage까지 모두 펼쳐지므로 expose하지 않고 필요한 요소만 노출한다.
+         * TODO(확인 필요): chapterMemberRoster 를 expose 했을 때 subset 된 개별 회원이 렌더링되는지 확인.
          */
         satisfy 'member value viewpoint';
-        expose ChapterMembersDirectory::*;
+        expose StakeholderDefinitions::IncoseKoreaChapterMember;
+        expose ChapterMembersDirectory::chapterMemberRoster;
         expose MemberNeedsAndSecurityRules::ChapterMembers_Needs::*;
         expose MemberNeedsAndSecurityRules::SecurityRules::*;
     }
@@ -61,11 +69,26 @@ package ChapterViews {
         satisfy 'peer society connection viewpoint';
         expose ExternalActorsAndInterfaces::ContextPeerSocietyOrganization;
         expose ExternalActorsAndInterfaces::PeerBenchmarkItem;
-        expose StakeholderDefinitions::PeerSociety;
+        expose StakeholderDefinitions::PeerSocietyMember;
         expose ChapterSystemContext::ChapterCapability;
         expose ChapterSystemContext::ChapterInContext::globalStandardFastAdoption;
         expose ChapterSystemContext::ChapterInContext::handsOnToolPractice;
         expose ChapterSystemContext::ChapterInContext::domainReferenceModelCreation;
+    }
+
+    view GovernanceQualityView {
+        doc
+        /* [매핑 관심사: GovernanceQualityConcern]
+         * LV3 거버넌스 시스템, 품질 게이트(Feedback/Gate/Maturity), 모델링 규약과 정책,
+         * 그리고 워킹그룹 제출 스키마 및 제출 현황 노출
+         */
+        satisfy 'governance and quality viewpoint';
+        expose GovernanceSystemAndTooling::GovernanceSystem::*;
+        expose QualityGatesAndReviewProcess::*;
+        expose ModelingConventionsAndPolicies::ModelingConventions::*;
+        expose ModelingConventionsAndPolicies::PolicyAndDirectives::*;
+        expose ChapterSprint::AssignmentSubmission;
+        expose WG_Submissions_Tracker::*;
     }
 
     // =========================================================================
@@ -104,15 +127,17 @@ package ChapterViews {
         }
     }
 
-    // (2) 챕터 5대 핵심 성과 지표(Core MoEs) 현황 모니터링 테이블 뷰
+    // (2) 챕터 핵심 성과 지표(Core MoEs) 현황 모니터링 테이블 뷰
     view ChapterCoreMoEsTableView : TableView {
         doc
-        /* LifecycleEvolutionConcern 대응: 챕터의 5대 핵심 성과 지표(Core MoEs) 현황 테이블 뷰.
-         * [개선 포인트]
+        /* LifecycleEvolutionConcern 대응: 챕터의 핵심 성과 지표(Core MoEs) 현황 테이블 뷰.
          * 1) exposeFeaturesAndHeritage = true 설정을 통해 상위 ChapterMoEsHolder로부터 상속받은
-         *    5대 MoE 속성이 테이블 셀에 정상 렌더링되도록 보장함.
+         *    MoE 속성이 테이블 셀에 렌더링되도록 한다.
          * 2) expose 경로에서 incoseKoreaChapterContext 내의 chapter 파트를 노출하고,
-         *    ColumnType::attributeValue 내부의 attributeName을 지정함.
+         *    ColumnType::attributeValue 내부의 attributeName을 지정한다.
+         * TODO(확인 필요): 참조모델 수(completedReferenceModelsCount)와 AI Skills 수(developedAISkillsCount)는
+         *   repository 크기에서 파생되므로 UI에서 직접 편집할 수 없다. 수동 입력이 필요하면 KoreaChapter에서
+         *   '수동 입력 + 일치 여부 assert' 방식으로 되돌린다.
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
@@ -154,11 +179,13 @@ package ChapterViews {
         }
     }
 
-    // (3) KnowledgeAssetConcern 대응: 워킹그룹별 과제 제출물 및 게이트 통과 현황 테이블 뷰
+    // (3) KnowledgeAssetConcern 대응: 워킹그룹별 과제 제출물 및 제출 상태 테이블 뷰
     view AssignmentSubmissionStatusTableView : TableView {
         doc
         /* WG_Submissions_Tracker 패키지만 단독으로 expose하여
-         * 1. Aerospace, 2. Automotive, 3. IT, 4. Semiconductor 4개 행만 정확히 테이블에 표시함.
+         * 워킹그룹별 제출 usage를 행으로 표시한다. 새 WG 제출 usage를 추가하면 행이 자동으로 늘어난다.
+         * TODO(확인 필요): workingGroup 은 attribute가 아닌 ref 이므로 namedFeatureValue 열로 표시했다.
+         *   값이 보이지 않으면 WorkingGroup.wgName 을 표시하는 파생 attribute 추가를 검토한다.
          */
         satisfy 'administrative operations viewpoint';
         attribute :>> exposeFeaturesAndHeritage = true;
@@ -168,9 +195,9 @@ package ChapterViews {
             attribute :>> featureToRender = ColumnType::declaredName;
             attribute :>> columnWidth = 220;
         }
-        view col_wgName :>> columnViews {
-            attribute :>> featureToRender = ColumnType::attributeValue {
-                attributeName = "workingGroupName";
+        view col_workingGroup :>> columnViews {
+            attribute :>> featureToRender = ColumnType::namedFeatureValue {
+                featureName = "workingGroup";
             }
             attribute :>> columnWidth = 240;
         }
@@ -179,6 +206,47 @@ package ChapterViews {
                 attributeName = "status";
             }
             attribute :>> columnWidth = 150;
+        }
+    }
+
+    // (4) GovernanceQualityConcern 대응: 제출물별 게이트 현황 테이블 뷰
+    view AssignmentGateStatusTableView : TableView {
+        doc
+        /* 워킹그룹 제출물의 통합 게이트 판정 결과(isGatePassed)와 제출 상태(status)를 함께 보여 준다.
+         * 상태와 게이트 결과의 모순은 AssignmentSubmission.statusGateConsistency 가 검사한다.
+         *
+         * TODO(확인 필요): checklist 는 중첩 속성(AssignmentGateChecklist)이라 Syside TableView에서
+         *   개별 항목(예: checklist.isIndependentWholeSystem)을 열로 표시할 수 있는지 확인되지 않았다.
+         *   표시할 수 없으면 대안:
+         *   1) AssignmentSubmission에 필요한 항목만 파생 attribute로 노출(예: isGatePassed 처럼 한 줄 파생),
+         *   2) AssignmentGateChecklist 인스턴스를 별도 행(expose)으로 두고 열을 속성 이름으로 구성,
+         *   3) MatrixView로 제출물(행) x Gate constraint(열) 매트릭스를 구성.
+         */
+        satisfy 'governance and quality viewpoint';
+        attribute :>> exposeFeaturesAndHeritage = true;
+        expose WG_Submissions_Tracker::*;
+
+        view col_submissionId :>> columnViews {
+            attribute :>> featureToRender = ColumnType::declaredName;
+            attribute :>> columnWidth = 220;
+        }
+        view col_status :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "status";
+            }
+            attribute :>> columnWidth = 150;
+        }
+        view col_isGatePassed :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "isGatePassed";
+            }
+            attribute :>> columnWidth = 150;
+        }
+        view col_checklist :>> columnViews {
+            attribute :>> featureToRender = ColumnType::attributeValue {
+                attributeName = "checklist";
+            }
+            attribute :>> columnWidth = 300;
         }
     }
 } // package ChapterViews

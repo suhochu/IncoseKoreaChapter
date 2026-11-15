@@ -2,39 +2,28 @@ package ChapterMetricsAndGuards {
     doc
     /* [MagicGrid: Measures of Effectiveness (MoEs) & System Parameters]
      * 기업 스폰서 등 외부 환경 변수를 배제하고, 챕터 내부의 산출물과 인적 역량만으로
-     * 성장을 측정 및 통제하는 5대 핵심 성과 지표(Core MoEs)와 Gate 제약 수식 정의.
+     * 성장을 측정 및 통제하는 핵심 성과 지표(Core MoEs)와 Phase 전환 판정 결과.
+     *
+     * 판정식과 임계값은 LV3(QualityGatesAndReviewProcess)가 한 곳에서 정의한다.
+     * 이 패키지는 지표 값을 그 constraint의 입력에 연결하고 판정 결과를 파생할 뿐, 숫자를 다시 적지 않는다.
      */
 
     private import ScalarValues::*;
     private import QualityGatesAndReviewProcess::*;
 
-    // =========================================================================
-    // 1. 5대 핵심 성과 지표 홀더 (Core 5 MoEs Holder)
-    // =========================================================================
     part def ChapterMoEsHolder {
         doc
-        /* KoreaChapter(SoI)가 상속받는 5대 핵심 정량 지표(MoEs) */
+        /* KoreaChapter(SoI)가 상속받는 핵심 정량 지표(MoEs).
+         * 각 지표의 목표 임계값은 QualityGatesAndReviewProcess::phase1To2Thresholds / phase2To3Thresholds 를 참조한다.
+         */
 
-        attribute accumulatedPresentationsCount : Integer default 1; // MoE 1: 누적 발표/사례 자료 수 (목표 >= 10)
-        attribute completedReferenceModelsCount : Integer default 0; // MoE 2: 완성된 도메인 참조모델 수 (목표 >= 3)
-        attribute developedAISkillsCount : Integer default 0; // MoE 3: 단계별 AI Skills 수 (Phase2 >= 3, Phase3 >= 5)
-        attribute regularActiveMembersCount : Integer default 12; // MoE 4: 고정 활동 인원 수 (Phase2 > 15, Phase3 >= 30)
-        attribute sepCertifiedMembersCount : Integer default 1; // MoE 5: SEP 자격 보유자 수 (Phase2 >= 3, Phase3 >= 10)
+        attribute accumulatedPresentationsCount : Integer; // MoE: 누적 발표/사례 자료 수 (수동 입력)
+        attribute completedReferenceModelsCount : Integer; // MoE: 완성된 도메인 참조모델 수 (KoreaChapter에서 repository 크기로 파생)
+        attribute developedAISkillsCount : Integer; // MoE: 단계별 AI Skills 수 (KoreaChapter에서 repository 크기로 파생)
+        attribute regularActiveMembersCount : Integer; // MoE: 고정 활동 인원 수 (수동 입력)
+        attribute sepCertifiedMembersCount : Integer; // MoE: SEP 자격 보유자 수 (수동 입력)
 
-        // Phase 전환 Guard용 파생 Boolean 속성 (상태머신 transition의 if 조건에서 직접 참조)
-        attribute isPhase1To2Ready : Boolean =
-            (accumulatedPresentationsCount >= 10 or regularActiveMembersCount > 15) and
-            completedReferenceModelsCount >= 3 and
-            developedAISkillsCount >= 3 and
-            sepCertifiedMembersCount >= 3;
-
-        attribute isPhase2To3Ready : Boolean =
-            regularActiveMembersCount >= 30 and
-            sepCertifiedMembersCount >= 10 and
-            developedAISkillsCount >= 5 and
-            completedReferenceModelsCount >= 3;
-
-        // Phase 1 -> Phase 2 전환 조건 수식 바인딩
+        // Phase 1 -> Phase 2 전환 판정: 지표 값을 LV3 constraint의 입력에 연결
         constraint phase1To2GateCheck : Phase1ToPhase2GateConstraint {
             in :>> presentations = accumulatedPresentationsCount;
             in :>> refModels = completedReferenceModelsCount;
@@ -43,7 +32,7 @@ package ChapterMetricsAndGuards {
             in :>> sepMembers = sepCertifiedMembersCount;
         }
 
-        // Phase 2 -> Phase 3 전환 조건 수식 바인딩
+        // Phase 2 -> Phase 3 전환 판정
         constraint phase2To3GateCheck : Phase2ToPhase3GateConstraint {
             in :>> presentations = accumulatedPresentationsCount;
             in :>> refModels = completedReferenceModelsCount;
@@ -51,51 +40,14 @@ package ChapterMetricsAndGuards {
             in :>> activeMembers = regularActiveMembersCount;
             in :>> sepMembers = sepCertifiedMembersCount;
         }
-    }
 
-    // =========================================================================
-    // 2. Phase 1 -> Phase 2 전환 게이트 제약 (온라인 스터디 -> 오프라인 세미나 정례화)
-    // =========================================================================
-    constraint def Phase1ToPhase2GateConstraint :> PhaseTransitionGateCondition {
-        doc
-        /* [Phase 1 -> Phase 2 전환 조건 (기업 스폰서 조건 제외)]
-         * 1) 누적 발표/사례 자료 10건 이상 OR 고정 활동 인원 15명 초과
-         * 2) 도메인별 참조모델 3건 이상 완성
-         * 3) 단계별 AI Architecting Skills 3개 이상 구축
-         * 4) INCOSE SEP 자격 보유 인원 3명 이상 확보
-         */
-        in :>> presentations : Integer;
-        in :>> refModels : Integer;
-        in :>> aiSkills : Integer;
-        in :>> activeMembers : Integer;
-        in :>> sepMembers : Integer;
-
-        (presentations >= 10 or activeMembers > 15) and
-        refModels >= 3 and
-        aiSkills >= 3 and
-        sepMembers >= 3
-    }
-
-    // =========================================================================
-    // 3. Phase 2 -> Phase 3 전환 게이트 제약 (세미나 정례화 -> 공식 WG 및 학회 Joint WG)
-    // =========================================================================
-    constraint def Phase2ToPhase3GateConstraint :> PhaseTransitionGateCondition {
-        doc
-        /* [Phase 2 -> Phase 3 전환 조건 (기업 스폰서 조건 제외)]
-         * 1) 고정 활동 인원 30명 이상 확대 (국내 학회 산하 Joint WG 연계 기준)
-         * 2) INCOSE SEP(CSEP 등) 자격 보유자 10명 이상 확보 (자체 아키텍트 인증 프로그램 개발 기준)
-         * 3) MagicGrid 전 단계(5단계) AI Architecting Skills 5개 이상 완비
-         * 4) 도메인별 참조모델 3건 이상 유지 및 고도화
-         */
-        in :>> presentations : Integer;
-        in :>> refModels : Integer;
-        in :>> aiSkills : Integer;
-        in :>> activeMembers : Integer;
-        in :>> sepMembers : Integer;
-
-        activeMembers >= 30 and
-        sepMembers >= 10 and
-        aiSkills >= 5 and
-        refModels >= 3
+        // Phase 전환 Guard용 파생 Boolean (상태머신 transition의 accept when 조건에서 참조).
+        // 판정식은 constraint 한 곳에만 있고, 여기서는 그 결과(result)만 가져온다.
+        // TODO(확인 필요): constraint usage 자체는 Boolean에 type-conform 하지 않아(Syside type-error) '.result'로 참조했다.
+        //   Syside 정적 평가기는 constraint usage를 평가하지 못하고('no result expression') '.result'도 값이 아닌
+        //   result feature 참조로 돌려준다. 실행(시뮬레이션) 수준에서의 평가 확인이 필요하다.
+        //   대안: 파생 Boolean만 남기고 constraint는 'assert constraint'로 사용(판정식 1곳 유지).
+        attribute isPhase1To2Ready : Boolean = phase1To2GateCheck.result;
+        attribute isPhase2To3Ready : Boolean = phase2To3GateCheck.result;
     }
 } // package ChapterMetricsAndGuards

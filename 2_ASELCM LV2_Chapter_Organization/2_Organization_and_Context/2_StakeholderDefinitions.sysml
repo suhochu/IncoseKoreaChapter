@@ -18,23 +18,6 @@ package StakeholderDefinitions {
         other;
     }
 
-    // ---- 내부 이해관계자 간 교환 아이템 및 포트 ----
-    item def NeedRequestItem {
-        doc
-        /* Member → Chapter */
-        attribute needText : String;
-    }
-
-    item def GiveResourceItem {
-        doc
-        /* Chapter → Member */
-        attribute resourceType : GiveResourceKind;
-        attribute detail : String [0..1];
-    }
-
-    port def NeedPort { out item needRequestOut : NeedRequestItem; }
-    port def GivePort { out item giveResourceOut : GiveResourceItem; }
-
     // ---- Enum 정의: 주요 산업 도메인 (패키지 레벨, 타 패키지 참조용) ----
     enum def DomainKind {
         defenseAndAerospace; // 방위산업 / 항공우주
@@ -42,6 +25,7 @@ package StakeholderDefinitions {
         railInfrastructureAndEnergy; // 철도 / 인프라 / 플랜트
         biomedicalAndHealthcare; // 의료기기 / 헬스케어
         itAndSoftware; // IT / 소프트웨어 시스템
+        semiconductor; // 반도체 / 반도체 장비
         academiaAndResearch; // 학계 / 연구소
         other; // 기타
     }
@@ -61,12 +45,14 @@ package StakeholderDefinitions {
 
     // ---- 이해관계자 (내부 구성요소) ----
     part def Member {
+        doc
+        /* 회원 식별자는 별도 attribute 없이 usage의 short name(예: <M001>)과 이름으로 부여한다.
+         * 표시명이 요소 이름과 달라야 할 때만 fullName 속성을 추가한다.
+         * TODO(개인정보): 이메일/전화번호는 모델에서 제거했다. 연락처가 필요하면 저장소 밖의 비공개 별도 파일에서 관리한다.
+         */
         // [설문1] 기본 인적 사항 및 소속
-        attribute name : String;
-        attribute email : String [0..*];
         attribute affiliation : String [0..1];
         attribute position : String [0..1];
-        attribute phoneNumber : String [0..1];
         attribute region : RegionKind [0..*];
         attribute domain : DomainKind [0..*];
         attribute domainOther : String [0..1];
@@ -74,16 +60,10 @@ package StakeholderDefinitions {
         attribute expectation : String [0..1];
     }
 
-    part def PeerSociety {
-        doc
-        /* 국내 타 학회. KOSSE/KCOSE 등. */
-        attribute peerSocietyKind : PeerSocietyKind;
-    }
-
     part def PeerSocietyMember :> Member {
         doc
         /* KOSSE/KCOSE 등 국내 타 학회 회원. 역량 뷰포인트 비교 대상. */
-        attribute affiliatedSociety : String;
+        attribute affiliatedSociety : PeerSocietyKind;
     }
 
     // ---- Enum 정의: 설문 2 요구사항 관련 ----
@@ -92,6 +72,7 @@ package StakeholderDefinitions {
         seminar; // 세미나/특강형
         caseStudy; // 케이스 스터디형
         projectLab; // 프로젝트 실습형
+        onlineReview; // 온라인 진행상황 공유 및 산출물 검토형
         literatureReading; // 문헌 리딩형
         other;
     }
@@ -100,6 +81,8 @@ package StakeholderDefinitions {
         notion; // Notion
         slackDiscord; // Slack / Discord
         googleWorkspace; // Google Workspace
+        github; // GitHub
+        seLabsAI; // SE-Labs AI
         other;
     }
 
@@ -112,7 +95,7 @@ package StakeholderDefinitions {
         other;
     }
 
-    // ---- Member Part Def (설문 1 + 설문 2 GtWR 특성 기반 업데이트) ----
+    // ---- Member Part Def (설문 1 + 설문 2 GtWR 특성 기반) ----
     part def IncoseKoreaChapterMember :> Member {
         // [설문2] GtWR C2 - Appropriate (적절성)
         attribute interestKeyword : String [0..3];
